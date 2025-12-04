@@ -1,0 +1,563 @@
+/* 关联设备页面样式 */
+.link-device-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 页面头部 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .back-button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f5f7fa;
+    border: 1px solid #dcdfe6;
+    transition: all 0.3s;
+    font-size: 20px;
+    color: #606266;
+    padding: 0;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #ecf5ff;
+      border-color: #409eff;
+      color: #409eff;
+      transform: translateX(-2px);
+    }
+
+    .el-icon {
+      font-size: 20px;
+    }
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0 0 4px 0;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: #909399;
+    margin: 0;
+
+    .file-name {
+      color: #409eff;
+      font-weight: 500;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+}
+
+/* 搜索区域 */
+.search-section {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #ebeef5;
+  padding: 20px 20px 0;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 搜索表单 */
+.search-form {
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+
+  .search-input {
+    width: 220px;
+  }
+
+  .search-select {
+    width: 160px;
+  }
+}
+
+/* 设备表格容器 */
+.device-table-container {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #ebeef5;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  .el-table {
+    border: none;
+    flex: 1;
+
+    th {
+      background-color: #fafafa;
+      font-weight: 600;
+      color: #303133;
+      border-bottom: 1px solid #ebeef5;
+      padding: 16px 0;
+    }
+
+    td {
+      border-bottom: 1px solid #f5f7fa;
+      color: #606266;
+      padding: 14px 0;
+    }
+
+    // 去除最后一行的底边框
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    // 悬停效果
+    :deep(.el-table__row) {
+      transition: background-color 0.3s;
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+    }
+
+    // 选中行样式
+    :deep(.el-table__row.current-row) {
+      background-color: #ecf5ff;
+    }
+  }
+}
+
+/* 设备名称单元格 */
+.device-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .device-icon {
+    font-size: 18px;
+    color: #67c23a;
+    flex-shrink: 0;
+  }
+
+  .device-name-text {
+    color: #303133;
+    font-weight: 500;
+  }
+}
+
+/* 空文本 */
+.empty-text {
+  color: #c0c4cc;
+  font-size: 14px;
+}
+
+/* 分页 */
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px;
+  background: #fff;
+  border-top: 1px solid #f5f7fa;
+}
+
+/* 标签样式 */
+.el-tag {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* 按钮样式优化 */
+.el-button {
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  .el-icon {
+    margin-right: 4px;
+  }
+}
+
+/* 复选框样式优化 */
+:deep(.el-checkbox) {
+  .el-checkbox__inner {
+    border-radius: 4px;
+    border: 2px solid #dcdfe6;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #409eff;
+    }
+  }
+
+  &.is-checked {
+    .el-checkbox__inner {
+      background-color: #409eff;
+      border-color: #409eff;
+    }
+  }
+}
+
+/* 表头复选框 */
+:deep(.el-table__header) {
+  .el-checkbox {
+    .el-checkbox__inner {
+      border: 2px solid #dcdfe6;
+
+      &:hover {
+        border-color: #409eff;
+      }
+    }
+  }
+}
+
+/* 加载状态 */
+:deep(.el-loading-mask) {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .search-form {
+    .search-input {
+      width: 180px;
+    }
+
+    .search-select {
+      width: 140px;
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+
+    .header-left {
+      width: 100%;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+
+  .search-form {
+    .el-form-item {
+      margin-right: 10px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .link-device-container {
+    padding: 10px;
+  }
+
+  .page-header {
+    padding: 16px;
+
+    .page-title {
+      font-size: 20px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+    }
+
+    .header-actions {
+      flex-direction: row;
+      gap: 8px;
+
+      .el-button {
+        flex: 1;
+      }
+    }
+  }
+
+  .search-section {
+    padding: 15px;
+  }
+
+  .search-form {
+    .el-form-item {
+      width: 100%;
+      margin-right: 0;
+    }
+
+    .search-input,
+    .search-select {
+      width: 100%;
+    }
+  }
+
+  .device-table-container {
+    overflow-x: auto;
+
+    .el-table {
+      min-width: 1000px;
+      font-size: 13px;
+    }
+  }
+
+  .pagination {
+    justify-content: center;
+    padding: 15px;
+  }
+}
+
+/* 页面进入动画 */
+.link-device-container {
+  animation: pageSlideIn 0.4s ease-out;
+}
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 头部卡片动画 */
+.page-header {
+  animation: headerFadeIn 0.3s ease-out;
+}
+
+@keyframes headerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 搜索区域动画 */
+.search-section {
+  animation: searchFadeIn 0.4s ease-out 0.1s both;
+}
+
+@keyframes searchFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 表格容器动画 */
+.device-table-container {
+  animation: tableFadeIn 0.5s ease-out 0.2s both;
+}
+
+@keyframes tableFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 返回按钮特效 */
+.back-button {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    background: linear-gradient(90deg, transparent, rgba(64, 158, 255, 0.15));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+/* 保存按钮强调 */
+.header-actions {
+  .el-button--primary {
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+    transition: all 0.3s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      box-shadow: none;
+      opacity: 0.6;
+    }
+  }
+}
+
+/* 表格行选中动画 */
+:deep(.el-table__row) {
+  &.hover-row {
+    transition: all 0.2s;
+  }
+}
+
+/* 选择框动画 */
+:deep(.el-checkbox__inner) {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::after {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* 标签动画 */
+.el-tag {
+  animation: tagFadeIn 0.3s ease-out;
+}
+
+@keyframes tagFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 滚动条美化 */
+.device-table-container {
+  :deep(.el-scrollbar__wrap) {
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+}
+
+/* 输入框聚焦效果 */
+:deep(.el-input__wrapper) {
+  transition: all 0.3s;
+
+  &:hover {
+    box-shadow: 0 0 0 1px #c0c4cc inset;
+  }
+
+  &.is-focus {
+    box-shadow: 0 0 0 1px #409eff inset;
+  }
+}
+
+/* 选择器下拉优化 */
+:deep(.el-select-dropdown) {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* 禁用按钮样式 */
+.el-button {
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+/* 表格空状态 */
+.el-table {
+  :deep(.el-table__empty-block) {
+    padding: 60px 0;
+
+    .el-empty {
+      padding: 0;
+    }
+  }
+}
+
+/* 高亮当前选中数量 */
+.header-actions {
+  .el-button--primary {
+    position: relative;
+
+    &:not(:disabled) {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(64, 158, 255, 0.5);
+  }
+}
+

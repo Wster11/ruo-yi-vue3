@@ -99,6 +99,34 @@ export const constantRoutes = [
     ],
   },
   {
+    path: "/file",
+    component: Layout,
+    redirect: "/file/manage",
+    meta: { title: "文件管理", icon: "Files", alwaysShow: true },
+    children: [
+      {
+        path: "manage",
+        component: () => import("@/views/fileManager/index"),
+        name: "FileManager",
+        meta: { title: "文件管理", icon: "tree" },
+      },
+      {
+        path: "detail/:id",
+        component: () => import("@/views/fileManager/fileDetail/index"),
+        name: "FileDetail",
+        hidden: true,
+        meta: { title: "文件详情", activeMenu: "/file/manage" },
+      },
+      {
+        path: "link/:fileId",
+        component: () => import("@/views/fileManager/linkDevice/index"),
+        name: "LinkDevice",
+        hidden: true,
+        meta: { title: "关联设备", activeMenu: "/file/manage" },
+      },
+    ],
+  },
+  {
     path: "/user",
     component: Layout,
     hidden: true,
