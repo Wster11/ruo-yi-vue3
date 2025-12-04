@@ -1,0 +1,249 @@
+/* 设备分类管理页面样式 */
+.app-container {
+  padding: 20px;
+  background-color: #f5f7fa;
+}
+
+/* 标题和操作按钮容器 */
+.title-action-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* 页面标题 */
+.page-title {
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #909399;
+  }
+}
+
+/* 操作栏 */
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 搜索框 */
+.search-form {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  margin-bottom: 20px;
+
+  .el-form-item {
+    margin-bottom: 0;
+  }
+
+  .search-input {
+    width: 300px;
+  }
+}
+
+/* 分类表格 */
+.category-table {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  overflow: hidden;
+
+  .el-table {
+    border: none;
+
+    th {
+      background-color: #fafafa;
+      font-weight: 600;
+      color: #303133;
+      border-bottom: 1px solid #ebeef5;
+    }
+
+    td {
+      border-bottom: 1px solid #ebeef5;
+      color: #606266;
+    }
+
+    .operation-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .modify-btn {
+      background-color: #ecf5ff;
+      border-color: #d9ecff;
+      color: #409eff;
+
+      &:hover {
+        background-color: #d9ecff;
+        border-color: #90cafc;
+        color: #337ecc;
+      }
+    }
+
+    .param-btn {
+      background-color: #f0f9eb;
+      border-color: #e1f3d8;
+      color: #67c23a;
+
+      &:hover {
+        background-color: #e1f3d8;
+        border-color: #b3e19d;
+        color: #529b2e;
+      }
+    }
+
+    .delete-btn {
+      background-color: #fef0f0;
+      border-color: #fbc4c4;
+      color: #f56c6c;
+
+      &:hover {
+        background-color: #fbc4c4;
+        border-color: #f26464;
+        color: #d4380d;
+      }
+    }
+  }
+}
+
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 10px;
+  }
+
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+
+    .search-input {
+      width: 100%;
+    }
+  }
+
+  .category-table .operation-buttons {
+    flex-direction: column;
+  }
+}
+ .device-category-dialog {
+  .el-dialog__header {
+    border-bottom: 1px solid #ebeef5;
+    text-align: left;
+  }
+
+  .el-dialog__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+    text-align: left;
+  }
+}
+
+.dialog-content {
+  max-height: 550px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+.form-section {
+  margin-bottom: 30px;
+  background-color: #fafafa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+
+  .section-icon {
+    color: #409eff;
+    margin-right: 8px;
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0;
+  }
+}
+
+.base-info-form {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.param-table-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+
+  .el-table {
+    margin-bottom: 0;
+  }
+}
+
+.empty-state {
+  background-color: #ffffff;
+  padding: 60px 0;
+  border-radius: 8px;
+  border: 1px dashed #ebeef5;
+  text-align: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 15px 20px;
+  border-top: 1px solid #ebeef5;
+  margin-top: 20px;
+}
+
+.add-param-btn {
+  margin-left: auto;
+}
+
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .form-section {
+    padding: 15px;
+  }
+
+  .base-info-form {
+    padding: 15px;
+  }
+
+  .param-table-container {
+    padding: 15px;
+  }
+
+  .pagination {
+    justify-content: center;
+    padding: 15px;
+  }
+}
