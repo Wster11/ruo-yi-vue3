@@ -73,12 +73,26 @@ export const constantRoutes = [
   {
     path: "/device",
     component: Layout,
-    redirect: "/device/category",
+    redirect: "/device/list",
     meta: { title: "设备管理", icon: "device", alwaysShow: true },
     children: [
       {
-        path: "category",
+        path: "list",
         component: () => import("@/views/device/index"),
+        name: "DeviceList",
+        meta: { title: "设备列表", icon: "list" },
+      },
+    ],
+  },
+  {
+    path: "",
+    component: Layout,
+    redirect: "/deviceCategory",
+    meta: { title: "设备分类管理", icon: "tree", alwaysShow: true },
+    children: [
+      {
+        path: "/deviceCategory",
+        component: () => import("@/views/deviceCategory/index"),
         name: "DeviceCategory",
         meta: { title: "设备分类管理", icon: "tree" },
       },

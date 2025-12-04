@@ -1,4 +1,4 @@
-/* 设备分类管理页面样式 */
+/* 设备列表页面样式 */
 .app-container {
   padding: 20px;
   background-color: #f5f7fa;
@@ -10,137 +10,77 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 /* 页面标题 */
 .page-title {
   h1 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #303133;
-    margin-bottom: 8px;
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    font-weight: bold;
   }
 
   .subtitle {
+    margin: 0;
     font-size: 14px;
-    color: #909399;
+    color: #606266;
   }
 }
 
 /* 操作栏 */
 .action-bar {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
 }
 
 /* 搜索框 */
 .search-form {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  align-items: center;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   border: 1px solid #ebeef5;
   margin-bottom: 20px;
+  align-items: center;
 
   .el-form-item {
     margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    /* 标签宽度固定 */
+    .el-form-item__label {
+      min-width: 80px;
+    }
+
+    /* 为不同类型的输入控件设置宽度 */
+    .el-input {
+      width: calc(100% - 80px);
+    }
+
+    .el-select {
+      width: calc(100% - 80px);
+    }
+
+    .el-date-editor {
+      width: calc(100% - 80px);
+    }
   }
 
-  .search-input {
-    width: 300px;
-  }
-}
-
-/* 分类表格 */
-.category-table {
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #ebeef5;
-  overflow: hidden;
-
-  .el-table {
-    border: none;
-
-    th {
-      background-color: #fafafa;
-      font-weight: 600;
-      color: #303133;
-      border-bottom: 1px solid #ebeef5;
-    }
-
-    td {
-      border-bottom: 1px solid #ebeef5;
-      color: #606266;
-    }
-
-    .operation-buttons {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .modify-btn {
-      background-color: #ecf5ff;
-      border-color: #d9ecff;
-      color: #409eff;
-
-      &:hover {
-        background-color: #d9ecff;
-        border-color: #90cafc;
-        color: #337ecc;
-      }
-    }
-
-    .param-btn {
-      background-color: #f0f9eb;
-      border-color: #e1f3d8;
-      color: #67c23a;
-
-      &:hover {
-        background-color: #e1f3d8;
-        border-color: #b3e19d;
-        color: #529b2e;
-      }
-    }
-
-    .delete-btn {
-      background-color: #fef0f0;
-      border-color: #fbc4c4;
-      color: #f56c6c;
-
-      &:hover {
-        background-color: #fbc4c4;
-        border-color: #f26464;
-        color: #d4380d;
-      }
-    }
+  /* 特殊处理按钮区域 */
+  .el-form-item:last-child {
+    grid-column: span 1;
+    gap: 12px;
+    width: auto;
   }
 }
 
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .app-container {
-    padding: 10px;
-  }
-
-  .search-form {
-    flex-direction: column;
-    align-items: stretch;
-
-    .search-input {
-      width: 100%;
-    }
-  }
-
-  .category-table .operation-buttons {
-    flex-direction: column;
-  }
-}
- .device-category-dialog {
+/* 设备弹窗样式 */
+.device-dialog {
   .el-dialog__header {
     border-bottom: 1px solid #ebeef5;
     text-align: left;
@@ -154,6 +94,7 @@
   }
 }
 
+/* 弹窗内容区域 */
 .dialog-content {
   max-height: 550px;
   overflow-y: auto;
@@ -161,89 +102,250 @@
   padding: 8px 0;
 }
 
-.form-section {
-  margin-bottom: 30px;
-  background-color: #fafafa;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-
-  .section-icon {
-    color: #409eff;
-    margin-right: 8px;
-    font-size: 20px;
-  }
-
-  h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-    margin: 0;
-  }
-}
-
-.base-info-form {
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #ebeef5;
-}
-
-.param-table-container {
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #ebeef5;
-
-  .el-table {
-    margin-bottom: 0;
-  }
-}
-
-.empty-state {
-  background-color: #ffffff;
-  padding: 60px 0;
-  border-radius: 8px;
-  border: 1px dashed #ebeef5;
-  text-align: center;
-}
-
+/* 弹窗底部按钮 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
-  padding: 15px 20px;
-  border-top: 1px solid #ebeef5;
-  margin-top: 20px;
+  gap: 12px;
 }
-
-.add-param-btn {
-  margin-left: auto;
-}
-
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .form-section {
-    padding: 15px;
+  .title-action-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 
-  .base-info-form {
-    padding: 15px;
+  .action-bar {
+    width: 100%;
+    justify-content: flex-start;
   }
 
-  .param-table-container {
-    padding: 15px;
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-container {
+    padding: 10px;
   }
 
-  .pagination {
+  .search-form {
+    padding: 15px;
+  }
+}
+
+/* 二维码下载弹窗样式 */
+.qr-download-dialog {
+  .el-dialog__header {
+    border-bottom: 1px solid #ebeef5;
+    padding-bottom: 15px;
+  }
+  
+  .el-dialog__footer {
+    border-top: 1px solid #ebeef5;
+    padding-top: 15px;
+  }
+}
+
+.qr-download-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.qr-code-preview {
+  text-align: center;
+}
+
+.qr-placeholder {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 20px;
+  background-color: #ffffff;
+  border: 2px solid #ebeef5;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.qr-dot-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 12px;
+  width: 80px;
+  height: 80px;
+}
+
+.qr-dot {
+  width: 30px;
+  height: 30px;
+  background-color: #303133;
+  border-radius: 4px;
+}
+
+.device-info {
+  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.device-name {
+  margin-bottom: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.serial-number {
+  font-size: 14px;
+  color: #606266;
+  width: 100%;
+  text-align: center;
+}
+.device-name {
+  color: var(--el-color-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.device-name:hover {
+  color: var(--el-color-primary-light-3);
+  background-color: var(--el-color-primary-light-9);
+}
+
+.device-name .right-arrow {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 12px;
+}
+
+.device-name:hover .right-arrow {
+  opacity: 1;
+}
+
+/* 弹窗样式 */
+.device-dialog {
+  .form-group {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ebeef5;
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+
+  .group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #303133;
+    }
+
+    .immutable-hint {
+      margin-left: auto;
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .param-settings {
+    padding: 16px;
+    background-color: #fafafa;
+    border-radius: 4px;
+  }
+
+  .param-hint {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .no-params {
+    padding: 40px 0;
+  }
+
+  .params-container {
+    margin-top: 16px;
+  }
+
+  /* 二维码配置样式 */
+  .qr-code-container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  .qr-preview {
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .qr-placeholder {
+    width: 120px;
+    height: 120px;
+    background-color: #fafafa;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    display: flex;
     justify-content: center;
-    padding: 15px;
+    align-items: center;
+  }
+
+  .qr-dot-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .qr-dot {
+    width: 20px;
+    height: 20px;
+    background-color: #303133;
+    border-radius: 2px;
+  }
+
+  .qr-form {
+    flex: 1;
+    min-width: 0;
   }
 }
