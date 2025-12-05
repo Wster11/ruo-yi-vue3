@@ -82,6 +82,20 @@ export const constantRoutes = [
         name: "DeviceList",
         meta: { title: "设备列表", icon: "list" },
       },
+      {
+        path: "detail/:id",
+        component: () => import("@/views/device/detail/index"),
+        name: "DeviceDetail",
+        hidden: true,
+        meta: { title: "设备详情", activeMenu: "/device/list" },
+      },
+      {
+        path: "link/:fileId",
+        component: () => import("@/views/device/linkFile/index"),
+        name: "LinkFile",
+        hidden: true,
+        meta: { title: "关联文件", activeMenu: "/device/list" },
+      },
     ],
   },
   {

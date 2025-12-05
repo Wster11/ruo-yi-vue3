@@ -7,7 +7,7 @@
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
         <div class="header-content">
-          <h1 class="page-title">关联更多设备</h1>
+          <h1 class="page-title">关联技术文档</h1>
           <p class="page-subtitle">
             当前文件: <span class="file-name">{{ fileName }}</span>
           </p>
@@ -24,6 +24,9 @@
           <el-icon><Check /></el-icon>
           保存关联 ({{ selectedDevices.length }})
         </el-button>
+        <el-button type="primary" size="default" @click="handleBatchUpload"
+          >批量上传</el-button
+        >
       </div>
     </div>
 
@@ -142,6 +145,7 @@
 
         <el-table-column
           prop="createTime"
+          label="创建时间"
           width="150"
           align="center"
         />
@@ -162,17 +166,157 @@
       </div>
     </div>
   </div>
+
+  <!-- 批量上传modal -->
+  <el-dialog
+    v-model="batchUploadVisible"
+    title="批量上传文件"
+    width="1000px"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+  >
+    <div class="batch-upload-container">
+      <!-- 提示信息 -->
+      <div class="upload-tip">
+        <el-icon class="tip-icon"><CircleCheck /></el-icon>
+        <span>批量上传的文件将自动关联到当前设备：{{ fileName }}</span>
+      </div>
+
+      <!-- 文件命名规范 -->
+      <div class="naming-rule-tip">
+        <el-icon class="tip-icon"><CircleCheck /></el-icon>
+        <span
+          >文件命名规范 格式: TD-RND-{Category}-{Seq}-{Lang} (例如:
+          TD-RND-CF-001-cn) 系统将自动校验分类简码与语言后缀的一致性。</span
+        >
+      </div>
+
+      <!-- 文件列表 -->
+      <div class="file-list-container">
+        <table class="file-list-table">
+          <thead>
+            <tr>
+              <th>文件名称(CODE)</th>
+              <th>类型</th>
+              <th>语言</th>
+              <th>关联设备(默认当前)</th>
+              <th>物理文件</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(file, index) in uploadFiles" :key="file.id">
+              <td>
+                <el-input
+                  v-model="file.fileName"
+                  placeholder="请输入文件名称"
+                  size="small"
+                />
+              </td>
+              <td>
+                <el-select
+                  v-model="file.fileType"
+                  placeholder="选择类型"
+                  size="small"
+                >
+                  <el-option label="操作手" value="操作手" />
+                  <el-option label="维护手册" value="维护手册" />
+                  <el-option label="安装指南" value="安装指南" />
+                </el-select>
+              </td>
+              <td>
+                <el-select
+                  v-model="file.language"
+                  placeholder="选择语言"
+                  size="small"
+                >
+                  <el-option label="中文(简体)" value="中文(简体)" />
+                  <el-option label="中文(繁体)" value="中文(繁体)" />
+                  <el-option label="English" value="English" />
+                </el-select>
+              </td>
+              <td>
+                <div class="device-info">
+                  <div class="input-item">
+                    <label class="input-label">分类</label>
+                    <el-input
+                      v-model="file.category"
+                      placeholder="分类"
+                      size="small"
+                      disabled
+                    />
+                  </div>
+                  <div class="input-item">
+                    <label class="input-label">名称</label>
+                    <el-input
+                      v-model="file.deviceName"
+                      placeholder="名称"
+                      size="small"
+                      disabled
+                    />
+                  </div>
+                </div>
+              </td>
+              <td>
+                <el-upload
+                  :auto-upload="false"
+                  :on-change="(uploadFile) => (file.file = uploadFile.raw)"
+                  :show-file-list="false"
+                >
+                  <el-button size="small" type="primary">
+                    <el-icon><UploadFilled /></el-icon>
+                    选择文件
+                  </el-button>
+                </el-upload>
+              </td>
+              <td class="delete-column">
+                <el-button
+                  type="danger"
+                  size="small"
+                  icon="Delete"
+                  @click="handleDeleteFile(index)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 添加文件按钮 -->
+      <div class="add-file-button">
+        <el-button type="success" size="small" @click="handleAddFile">
+          <el-icon><Plus /></el-icon>
+          添加文件
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 底部操作按钮 -->
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="handleCloseBatchUpload">取消</el-button>
+        <el-button type="primary" @click="handleStartUpload"
+          >开始上传 ({{ uploadFiles.length }})</el-button
+        >
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
-  ArrowLeft,
+  UploadFilled,
   Check,
-  Box,
+  CircleCheck,
+  CircleCheckFilled,
+  Plus,
+  Delete,
+  ArrowLeft,
   Search,
+  Box,
   RefreshLeft,
 } from "@element-plus/icons-vue";
 
@@ -335,6 +479,77 @@ const handleSizeChange = (size) => {
   // 加载数据
 };
 
+// 批量上传相关
+const batchUploadVisible = ref(false);
+const uploadFiles = ref([
+  {
+    id: 1,
+    fileName: "TD-RND-CF-001-cn",
+    fileType: "操作手",
+    language: "中文(简体)",
+    category: "CF",
+    deviceName: "CF-200-1",
+    file: null,
+  },
+]);
+
+// 打开批量上传modal
+const handleBatchUpload = () => {
+  batchUploadVisible.value = true;
+};
+
+// 关闭批量上传modal
+const handleCloseBatchUpload = () => {
+  batchUploadVisible.value = false;
+};
+
+// 添加文件
+const handleAddFile = () => {
+  const newFile = {
+    id: Date.now(),
+    fileName: "",
+    fileType: "操作手",
+    language: "中文(简体)",
+    category: "CF",
+    deviceName: "CF-200-1",
+    file: null,
+  };
+  uploadFiles.value.push(newFile);
+};
+
+// 删除文件
+const handleDeleteFile = (index) => {
+  uploadFiles.value.splice(index, 1);
+};
+
+// 选择文件
+const handleFileChange = (index, event) => {
+  const file = event.target.files[0];
+  if (file) {
+    uploadFiles.value[index].file = file;
+  }
+};
+
+// 开始上传
+const handleStartUpload = () => {
+  if (uploadFiles.value.length === 0) {
+    ElMessage.warning("请添加文件");
+    return;
+  }
+
+  // 检查是否所有文件都已选择
+  const hasEmptyFile = uploadFiles.value.some((file) => !file.file);
+  if (hasEmptyFile) {
+    ElMessage.warning("请为所有文件选择物理文件");
+    return;
+  }
+
+  // 模拟上传
+  console.log("上传文件:", uploadFiles.value);
+  ElMessage.success("文件上传成功");
+  batchUploadVisible.value = false;
+};
+
 // 初始化
 onMounted(() => {
   // 从路由参数获取文件信息
@@ -355,4 +570,115 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 @use "./index.scss";
+
+// 批量上传样式
+.batch-upload-container {
+  padding: 10px 0;
+}
+
+.upload-tip,
+.naming-rule-tip {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  color: #67c23a;
+
+  .tip-icon {
+    margin-right: 8px;
+    font-size: 16px;
+    margin-top: 2px;
+  }
+}
+
+.upload-tip {
+  background-color: #f0f9eb;
+  border: 1px solid #d9f7be;
+}
+
+.naming-rule-tip {
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+  color: #1890ff;
+}
+
+.file-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.file-list-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  th {
+    background-color: #fafafa;
+    font-weight: 600;
+    color: #303133;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 15px 10px;
+
+    .el-input,
+    .el-select {
+      width: 100%;
+    }
+  }
+
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 120px;
+  }
+
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 60px;
+    text-align: center;
+  }
+}
+
+.device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-item {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-label {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+}
+
+.delete-column {
+  text-align: center;
+}
+
+.add-file-button {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 </style>

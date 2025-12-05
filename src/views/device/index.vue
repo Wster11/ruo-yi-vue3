@@ -77,7 +77,12 @@
       <el-table-column label="设备名称" width="140">
         <template #default="scope">
           <div class="device-name">
-            {{ scope.row.deviceName }}
+            <router-link
+              :to="`/device/detail/${scope.row.id}`"
+              class="device-name-link"
+            >
+              {{ scope.row.deviceName }}
+            </router-link>
             <el-icon class="right-arrow"><ArrowRight /></el-icon>
           </div>
         </template>
@@ -249,12 +254,21 @@
               prop="serialNumber"
               :disabled="!formData.deviceCategory"
             >
-              <el-input
+              <el-select
                 v-model="formData.serialNumber"
-                placeholder="请输入设备型号"
-                @input="handleSerialNumberChange"
+                placeholder="请输入或选择设备型号"
+                @change="handleSerialNumberChange"
                 style="width: 100%"
-              />
+                filterable
+                allow-create
+              >
+                <el-option
+                  v-for="model in filteredModels"
+                  :key="model.value"
+                  :label="model.label"
+                  :value="model.value"
+                />
+              </el-select>
             </el-form-item>
           </div>
         </div>
@@ -275,37 +289,26 @@
               <el-empty description="该分类暂无参数定义" image-size="100" />
             </div>
             <div v-else class="params-container">
-              <el-table
-                :data="currentParams"
-                style="width: 100%"
-                border
-                size="small"
+              <div
+                v-for="(param, index) in currentParams"
+                :key="index"
+                class="param-item"
               >
-                <el-table-column
-                  prop="paramName"
-                  label="参数名称"
-                  min-width="150"
-                />
-                <el-table-column
-                  prop="paramValue"
-                  label="参数值"
-                  min-width="200"
-                >
-                  <template #default="scope">
-                    <el-input
-                      v-model="scope.row.paramValue"
-                      placeholder="请输入参数值"
-                      size="small"
-                    />
-                  </template>
-                </el-table-column>
-                <el-table-column prop="unit" label="单位" width="100" />
-                <el-table-column
-                  prop="description"
-                  label="说明"
-                  min-width="200"
-                />
-              </el-table>
+                <div class="param-header">
+                  <span class="param-name">{{ param.paramName }}</span>
+                  <el-tag type="success" size="small" effect="light"
+                    >Visible</el-tag
+                  >
+                </div>
+                <div class="param-input-group">
+                  <el-input
+                    v-model="param.paramValue"
+                    placeholder="输入参数值"
+                    style="width: 200px"
+                  />
+                  <span class="param-unit">{{ param.unit }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -344,6 +347,7 @@
                   placeholder="请输入扫描二维码后显示的描述信息"
                   type="textarea"
                   rows="2"
+                  :disabled="!formData.deviceCategory"
                 />
               </el-form-item>
             </div>
@@ -397,7 +401,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
@@ -409,6 +414,9 @@ import {
   ArrowRight,
   Download,
 } from "@element-plus/icons-vue";
+
+const router = useRouter();
+const route = useRoute();
 
 // 搜索表单数据
 const searchForm = reactive({
@@ -555,6 +563,7 @@ const getDeviceList = () => {
         relatedDoc: true,
         createTime: "2023-10-15",
         creator: "张三",
+        id: 1,
       },
       {
         deviceName: "CH-Alpha-1",
@@ -564,6 +573,7 @@ const getDeviceList = () => {
         relatedDoc: false,
         createTime: "2023-11-01",
         creator: "李四",
+        id: 2,
       },
       {
         deviceName: "IH-Core-1",
@@ -573,6 +583,7 @@ const getDeviceList = () => {
         relatedDoc: false,
         createTime: "2023-12-20",
         creator: "王五",
+        id: 3,
       },
       {
         deviceName: "PE-Unit-1",
@@ -582,6 +593,7 @@ const getDeviceList = () => {
         relatedDoc: false,
         createTime: "2024-03-01",
         creator: "张三",
+        id: 4,
       },
       {
         deviceName: "SA-Scope-1",
@@ -591,6 +603,7 @@ const getDeviceList = () => {
         relatedDoc: false,
         createTime: "2022-05-20",
         creator: "赵六",
+        id: 5,
       },
     ];
     deviceList.value = mockData;
@@ -622,13 +635,16 @@ const handleReset = () => {
 // 生成设备名称和二维码序列化地址
 const generateDeviceName = () => {
   if (formData.deviceModel && formData.serialNumber) {
-    // 设备名称 = 设备编码 + '-' + 设备型号
-    formData.deviceName = `${formData.deviceModel}-${formData.serialNumber}`;
+    // 设备名称 = 设备分类 + '-' + 设备编码
+    formData.deviceName = `${formData.deviceCategory}-${formData.serialNumber}`;
     // 生成序列化地址
     qrConfig.serializedAddress = `device://${formData.deviceCategory}/${formData.deviceModel}/${formData.serialNumber}`;
+    // 自动生成二维码描述信息 BP+设备名称
+    qrConfig.description = `BP-${formData.deviceName}`;
   } else {
     formData.deviceName = "";
     qrConfig.serializedAddress = "";
+    qrConfig.description = "";
   }
 };
 
@@ -725,7 +741,11 @@ const handleDownloadQrCode = () => {
 
 // 关联文档
 const handleRelate = (row) => {
-  ElMessage.info(`关联${row.deviceName}的文档`);
+  router.push({
+    name: "LinkFile",
+    params: { fileId: row.id },
+    query: { fileName: row.deviceName },
+  });
 };
 
 // 删除设备
