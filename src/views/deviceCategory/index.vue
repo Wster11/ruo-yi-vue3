@@ -25,6 +25,7 @@
           placeholder="搜索分类名称..."
           class="search-input"
           clearable
+          @keyup.enter="handleSearch"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
@@ -32,22 +33,47 @@
         </el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search">查询</el-button>
+        <el-button type="primary" icon="Search" @click="handleSearch">查询</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 分类表格 -->
     <div class="category-table">
-      <el-table :data="categoryList" style="width: 100%">
-        <el-table-column label="分类名称" width="100" align="left">
+      <el-table 
+        :data="categoryList" 
+        style="width: 100%"
+        v-loading="loading"
+      >
+        <el-table-column label="分类代码" width="120" align="left">
           <template #default="scope">
             <div class="category-name">
-              {{ scope.row.code }}
+              {{ scope.row.categoryCode }}
               <el-icon class="right-arrow"><ArrowRight /></el-icon>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="分类描述" align="left" />
+        <el-table-column prop="categoryName" label="分类名称" width="180" align="left" />
+        <el-table-column prop="categoryDes" label="分类描述" align="left" />
+        <el-table-column
+          prop="deviceCount"
+          label="设备数量"
+          width="100"
+          align="center"
+        >
+          <template #default="scope">
+            <el-tag type="info" size="small">{{ scope.row.deviceCount || 0 }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="attributeCount"
+          label="参数数量"
+          width="100"
+          align="center"
+        >
+          <template #default="scope">
+            <el-tag type="success" size="small">{{ scope.row.attributeCount || 0 }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="createTime"
           label="创建时间"
@@ -55,12 +81,12 @@
           align="center"
         />
         <el-table-column
-          prop="creator"
+          prop="createBy"
           label="创建人"
           width="120"
           align="center"
         />
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="scope">
             <div class="operation-buttons">
               <el-button
@@ -69,8 +95,18 @@
                 size="small"
                 class="modify-btn"
                 icon="Edit"
+                @click="openEditDialog(scope.row)"
               >
                 修改
+              </el-button>
+              <el-button
+                type="danger"
+                plain
+                size="small"
+                icon="Delete"
+                @click="handleDelete(scope.row)"
+              >
+                删除
               </el-button>
             </div>
           </template>
@@ -80,15 +116,25 @@
 
     <!-- 分页 -->
     <div class="pagination-container">
-      <el-pagination background layout="prev, pager, next" :total="1000" />
+      <el-pagination 
+        background 
+        layout="total, prev, pager, next, sizes" 
+        :total="pagination.total"
+        :current-page="pagination.currentPage"
+        :page-size="pagination.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </div>
-    <!-- 新建设备分类弹窗 -->
+    <!-- 新建/编辑设备分类弹窗 -->
     <el-dialog
       v-model="addDialogVisible"
-      title="新建设备分类"
+      :title="dialogTitle"
       width="900px"
       class="device-category-dialog"
       :center="false"
+      :close-on-click-modal="false"
     >
       <div class="dialog-content">
         <!-- 基本信息 -->
@@ -218,14 +264,12 @@
                     filterable
                     allow-create
                   >
-                    <el-option label="长度" value="长度" />
-                    <el-option label="宽度" value="宽度" />
-                    <el-option label="高度" value="高度" />
-                    <el-option label="重量" value="重量" />
-                    <el-option label="功率" value="功率" />
-                    <el-option label="电压" value="电压" />
-                    <el-option label="电流" value="电流" />
-                    <el-option label="温度" value="温度" />
+                    <el-option 
+                      v-for="attr in availableAttributes" 
+                      :key="attr.id" 
+                      :label="attr.categoryAttributeName" 
+                      :value="attr.categoryAttributeName" 
+                    />
                   </el-select>
                 </template>
               </el-table-column>
@@ -299,12 +343,15 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button size="default" @click="addDialogVisible = false"
-            >取消</el-button
+          <el-button size="default" @click="addDialogVisible = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            size="default" 
+            @click="submitForm"
+            :loading="loading"
           >
-          <el-button type="primary" size="default" @click="submitForm"
-            >提交保存</el-button
-          >
+            {{ isEditMode ? '保存修改' : '提交保存' }}
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -312,8 +359,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from "vue";
-import { ElMessage } from "element-plus";
+import { ref, onMounted, reactive, computed } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
   Search,
@@ -323,46 +370,42 @@ import {
   Operation,
   DataAnalysis,
 } from "@element-plus/icons-vue";
+import {
+  getCategoryList,
+  getAttributeList,
+  addCategory,
+  editCategory,
+  deleteCategory,
+  getCategoryDetail
+} from '@/api/deviceCategory';
 
 // 搜索查询
 const searchQuery = ref("");
 
+// 加载状态
+const loading = ref(false);
+
 // 分类列表
-const categoryList = ref([
-  {
-    code: "CF",
-    name: "离心机 (Centrifuge)",
-    createTime: "2023-01-01",
-    creator: "系统管理员",
-  },
-  {
-    code: "CH",
-    name: "底盘 (Chassis)",
-    createTime: "2023-01-01",
-    creator: "系统管理员",
-  },
-  {
-    code: "IH",
-    name: "感应加热 (Induction Heating)",
-    createTime: "2023-01-01",
-    creator: "系统管理员",
-  },
-  {
-    code: "PE",
-    name: "电力电子 (Power Electronics)",
-    createTime: "2023-01-01",
-    creator: "系统管理员",
-  },
-  {
-    code: "SA",
-    name: "频谱分析仪 (Spectrum Analyzer)",
-    createTime: "2023-01-01",
-    creator: "系统管理员",
-  },
-]);
+const categoryList = ref([]);
+
+// 分页数据
+const pagination = reactive({
+  total: 0,
+  currentPage: 1,
+  pageSize: 10,
+});
 
 // 弹窗显示状态
 const addDialogVisible = ref(false);
+
+// 编辑模式标识
+const isEditMode = ref(false);
+const currentCategoryId = ref(null);
+
+// 对话框标题
+const dialogTitle = computed(() => {
+  return isEditMode.value ? '编辑设备分类' : '新建设备分类';
+});
 
 // 表单数据
 const formData = reactive({
@@ -376,16 +419,153 @@ const formData = reactive({
 // 参数列表
 const paramList = ref([]);
 
+// 可选参数列表（从后端获取）
+const availableAttributes = ref([]);
+
+// 获取分类列表
+const fetchCategoryList = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      pageNum: pagination.currentPage,
+      pageSize: pagination.pageSize,
+      categoryName: searchQuery.value || undefined,
+    };
+    
+    const res = await getCategoryList(params);
+    
+    if (res.code === 200) {
+      categoryList.value = res.rows || [];
+      pagination.total = res.total || 0;
+    } else {
+      ElMessage.error(res.msg || '获取分类列表失败');
+    }
+  } catch (error) {
+    console.error('获取分类列表失败:', error);
+    ElMessage.error('获取分类列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 查询
+const handleSearch = () => {
+  pagination.currentPage = 1;
+  fetchCategoryList();
+};
+
+// 获取可选属性列表
+const fetchAvailableAttributes = async () => {
+  try {
+    const res = await getAttributeList({});
+    if (res.code === 200) {
+      availableAttributes.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取属性列表失败:', error);
+  }
+};
+
 // 打开新增弹窗
 const openAddDialog = () => {
   // 重置表单数据
   formData.categoryName = "";
+  formData.categoryCode = "";
   formData.categoryDesc = "";
   formData.createTime = new Date();
+  formData.creator = "系统管理员";
+  
   // 清空参数列表
   paramList.value = [];
+  
+  // 设置为新增模式
+  isEditMode.value = false;
+  currentCategoryId.value = null;
+  
   // 显示弹窗
   addDialogVisible.value = true;
+};
+
+// 打开编辑弹窗
+const openEditDialog = async (row) => {
+  try {
+    loading.value = true;
+    
+    // 获取分类详情
+    const res = await getCategoryDetail(row.id);
+    
+    if (res.code === 200) {
+      const detail = res.data;
+      
+      // 填充表单数据
+      formData.categoryName = detail.categoryName || "";
+      formData.categoryCode = detail.categoryCode || "";
+      formData.categoryDesc = detail.categoryDes || "";
+      formData.createTime = detail.createTime || new Date();
+      formData.creator = detail.createBy || "系统管理员";
+      
+      // 填充参数列表
+      if (detail.attributes && detail.attributes.length > 0) {
+        paramList.value = detail.attributes.map(attr => ({
+          id: attr.id,
+          paramName: attr.categoryAttributeName,
+          unit: attr.attributeUnit || "",
+          language: "zh-CN", // 默认中文
+          isVisible: true,
+          attributeType: attr.attributeType,
+        }));
+      } else {
+        paramList.value = [];
+      }
+      
+      // 设置为编辑模式
+      isEditMode.value = true;
+      currentCategoryId.value = row.id;
+      
+      // 显示弹窗
+      addDialogVisible.value = true;
+    } else {
+      ElMessage.error(res.msg || '获取分类详情失败');
+    }
+  } catch (error) {
+    console.error('获取分类详情失败:', error);
+    ElMessage.error('获取分类详情失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 删除分类
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除分类 "${row.categoryName}" 吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+    
+    loading.value = true;
+    const res = await deleteCategory(row.id);
+    
+    if (res.code === 200) {
+      ElMessage.success('删除成功');
+      // 刷新列表
+      fetchCategoryList();
+    } else {
+      ElMessage.error(res.msg || '删除失败');
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除分类失败:', error);
+      ElMessage.error('删除失败');
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 添加参数
@@ -404,10 +584,15 @@ const deleteParam = (index) => {
 };
 
 // 提交表单
-const submitForm = () => {
+const submitForm = async () => {
   // 验证表单
   if (!formData.categoryName.trim()) {
     ElMessage.warning("请输入分类名称");
+    return;
+  }
+  
+  if (!formData.categoryCode.trim()) {
+    ElMessage.warning("请输入设备分类描述");
     return;
   }
 
@@ -420,16 +605,76 @@ const submitForm = () => {
     return;
   }
 
-  // 模拟提交数据
-  console.log("表单数据:", formData);
-  console.log("参数列表:", paramList.value);
-
-  // 关闭弹窗
-  addDialogVisible.value = false;
-
-  // 显示成功消息
-  ElMessage.success("设备分类创建成功");
+  try {
+    loading.value = true;
+    
+    // 准备提交数据
+    const submitData = {
+      categoryName: formData.categoryName,
+      categoryCode: formData.categoryCode,
+      categoryDes: formData.categoryDesc,
+      remark: formData.categoryDesc,
+      attributes: paramList.value.map(param => ({
+        categoryAttributeName: param.paramName,
+        attributeUnit: param.unit,
+        attributeType: param.attributeType || 'text',
+        isRequired: false,
+        defaultValue: '',
+      })),
+    };
+    
+    let res;
+    if (isEditMode.value) {
+      // 编辑模式
+      submitData.id = currentCategoryId.value;
+      res = await editCategory(submitData);
+    } else {
+      // 新增模式
+      res = await addCategory(submitData);
+    }
+    
+    if (res.code === 200) {
+      ElMessage.success(isEditMode.value ? '编辑成功' : '新增成功');
+      
+      // 关闭弹窗
+      addDialogVisible.value = false;
+      
+      // 刷新列表
+      if (isEditMode.value) {
+        fetchCategoryList();
+      } else {
+        pagination.currentPage = 1;
+        fetchCategoryList();
+      }
+    } else {
+      ElMessage.error(res.msg || '操作失败');
+    }
+  } catch (error) {
+    console.error('提交失败:', error);
+    ElMessage.error('操作失败');
+  } finally {
+    loading.value = false;
+  }
 };
+
+// 页码改变
+const handlePageChange = (page) => {
+  pagination.currentPage = page;
+  fetchCategoryList();
+};
+
+// 每页条数改变
+const handleSizeChange = (size) => {
+  pagination.pageSize = size;
+  pagination.currentPage = 1;
+  fetchCategoryList();
+};
+
+// 初始化
+onMounted(() => {
+  fetchCategoryList();
+  fetchAvailableAttributes();
+});
 </script>
 
 <style lang="scss" scoped>

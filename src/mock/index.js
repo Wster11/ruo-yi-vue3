@@ -6,6 +6,7 @@
 // 导入所有 mock 配置
 import './home'
 import './fileManage'
+import './deviceCategory'
 
 // 可以在这里添加更多 mock 配置
 // import './device'
