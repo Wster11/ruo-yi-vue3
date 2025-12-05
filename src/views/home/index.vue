@@ -11,7 +11,7 @@
             <div class="card-main">
               <el-icon class="card-icon"><List /></el-icon>
               <div class="card-number">
-                <span class="card-value">100</span>
+                <span class="card-value">{{ userCountInfo.deviceCount }}</span>
                 <span class="card-unit">台</span>
               </div>
             </div>
@@ -29,7 +29,7 @@
             <div class="card-main">
               <el-icon class="card-icon"><Document /></el-icon>
               <div class="card-number">
-                <span class="card-value">500</span>
+                <span class="card-value">{{ userCountInfo.fileCount }}</span>
                 <span class="card-unit">份</span>
               </div>
             </div>
@@ -48,7 +48,7 @@
             <div class="card-main">
               <el-icon class="card-icon"><Connection /></el-icon>
               <div class="card-number">
-                <span class="card-value">89.9</span>
+                <span class="card-value">{{ userCountInfo.relatedRate }}</span>
                 <span class="card-unit">%</span>
               </div>
             </div>
@@ -73,7 +73,7 @@
                 />
               </el-icon>
               <div class="card-number">
-                <span class="card-value">1000</span>
+                <span class="card-value">{{ userCountInfo.scanTotal }}</span>
                 <span class="card-unit">次</span>
               </div>
             </div>
@@ -118,7 +118,7 @@
         </h3>
         <a href="#" class="view-all">查看全部</a>
       </div>
-      <el-table :data="latestDevices" stripe style="width: 100%">
+      <el-table :data="userCountInfo.deviceNewList" stripe style="width: 100%">
         <el-table-column prop="deviceName" label="设备名称" min-width="150">
           <template #default="scope">
             <div class="device-name-with-icon">
@@ -127,26 +127,26 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceCategory" label="设备分类" min-width="120">
+        <el-table-column prop="categoryLabel" label="设备分类" min-width="120">
           <template #default="scope">
             <el-button type="text" size="small">{{
-              scope.row.deviceCategory
+              scope.row.categoryLabel
             }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceModel" label="设备型号" min-width="150" />
+        <el-table-column prop="deviceModelName" label="设备型号" min-width="150" />
         <el-table-column prop="documentLinked" label="文档关联" min-width="100">
           <template #default="scope">
             <span
               class="status-indicator"
               :class="scope.row.documentLinked ? 'linked' : 'unlinked'"
             >
-              {{ scope.row.documentLinked ? "是" : "否" }}
+              {{ scope.row.devicebindFile === 'Y' ? "是" : "否" }}
             </span>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
-        <el-table-column prop="creator" label="创建人" min-width="100" />
+        <el-table-column prop="createBy" label="创建人" min-width="100" />
       </el-table>
     </div>
     <!-- 最新设备表格区域 -->
@@ -157,8 +157,8 @@
         </h3>
         <a href="#" class="view-all">查看全部</a>
       </div>
-      <el-table :data="latestDevices" stripe style="width: 100%">
-        <el-table-column prop="deviceName" label="设备名称" min-width="150">
+      <el-table :data="userCountInfo.fileNewList" stripe style="width: 100%">
+        <el-table-column prop="deviceName" label="文件名称" min-width="200">
           <template #default="scope">
             <div class="device-name-with-icon">
               <el-icon class="device-icon"><Document /></el-icon>
@@ -166,75 +166,72 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceCategory" label="设备分类" min-width="120">
+        <el-table-column prop="categoryLabel" label="关联设备分类" min-width="120">
           <template #default="scope">
             <el-button type="text" size="small">{{
-              scope.row.deviceCategory
+              scope.row.categoryLabel
             }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceModel" label="设备型号" min-width="150" />
-        <el-table-column prop="documentLinked" label="文档关联" min-width="100">
+        <el-table-column prop="deviceName" label="设备名称" min-width="100" />
+        <el-table-column prop="documentLinked" label="关联状态" min-width="100">
           <template #default="scope">
             <span
               class="status-indicator"
               :class="scope.row.documentLinked ? 'linked' : 'unlinked'"
             >
-              {{ scope.row.documentLinked ? "是" : "否" }}
+              {{ scope.row.fileBoundDevices === 'Y' ? "已关联" : "未关联" }}
             </span>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
-        <el-table-column prop="creator" label="创建人" min-width="100" />
+        <el-table-column prop="createBy" label="创建人" min-width="100" />
       </el-table>
     </div>
   </div>
 </template>
 
 <script setup>
-// 最新设备数据
-const latestDevices = [
-  {
-    deviceName: "温度传感器A",
-    deviceCategory: "传感器",
-    deviceModel: "",
-    documentLinked: false,
-    createTime: "2025-12-02 13:32:07",
-    creator: "admin",
-  },
-  {
-    deviceName: "压力传感器B",
-    deviceCategory: "传感器",
-    deviceModel: "PS-100",
-    documentLinked: true,
-    createTime: "2025-12-02 12:15:30",
-    creator: "admin",
-  },
-  {
-    deviceName: "PLC控制器C",
-    deviceCategory: "控制器",
-    deviceModel: "PLC-2000",
-    documentLinked: true,
-    createTime: "2025-12-01 15:45:22",
-    creator: "user1",
-  },
-  {
-    deviceName: "电机驱动器D",
-    deviceCategory: "驱动器",
-    deviceModel: "MD-500",
-    documentLinked: false,
-    createTime: "2025-12-01 10:30:15",
-    creator: "user2",
-  },
-  {
-    deviceName: "触摸屏E",
-    deviceCategory: "人机界面",
-    deviceModel: "HMI-10",
-    documentLinked: true,
-    createTime: "2025-11-30 14:20:08",
-    creator: "admin",
-  },
-];
+import { ref, onMounted } from 'vue'
+import { getHomeData } from '@/api/home'
+
+  const userCountInfo = ref({
+    deviceNewList: [],
+    fileNewList: [],
+    deviceCount: 0,
+    fileCount: 0,
+    relatedRate: '0%',
+    scanTotal: 0,
+    categoryCount: 0,
+    languageCount: 0,
+  })
+
+
+// 加载状态
+const loading = ref(false)
+
+// 获取首页数据
+const fetchHomeData = async () => {
+  loading.value = true
+  try {
+    const res = await getHomeData()
+    console.log(res,'ressss')
+    if (res.code === 200) {
+      userCountInfo.value = res.data
+      console.log(userCountInfo.value,'userCountInfo.value');
+      
+    }
+  } catch (error) {
+    console.error('获取首页数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchHomeData()
+})
 </script>
 
 <style lang="scss" scoped>

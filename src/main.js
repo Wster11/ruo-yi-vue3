@@ -25,6 +25,11 @@ import elementIcons from '@/components/SvgIcon/svgicon'
 
 import './permission' // permission control
 
+// 开发环境引入 Mock 数据
+if (process.env.NODE_ENV === 'development') {
+  import('@/mock')
+}
+
 import { useDict } from '@/utils/dict'
 import { getConfigKey } from "@/api/system/config"
 import { parseTime, resetForm, addDateRange, handleTree, selectDictLabel, selectDictLabels } from '@/utils/ruoyi'
