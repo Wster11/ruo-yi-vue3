@@ -21,7 +21,7 @@
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="设备分类">
           <el-input
-            v-model="searchForm.deviceCategory"
+            v-model="searchForm.categoryName"
             placeholder="分类名称"
           />
         </el-form-item>
@@ -29,7 +29,7 @@
           <el-input v-model="searchForm.deviceName" placeholder="设备名称" />
         </el-form-item>
         <el-form-item label="设备型号">
-          <el-input v-model="searchForm.deviceModel" placeholder="型号" />
+          <el-input v-model="searchForm.deviceModelName" placeholder="型号" />
         </el-form-item>
         <el-form-item label="关联文档">
           <el-select v-model="searchForm.relatedDoc" placeholder="全部">
@@ -88,35 +88,35 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="deviceCategory"
+        prop="categoryName"
         label="设备分类"
-        width="80"
+        width="120"
         align="center"
       />
       <el-table-column
-        prop="deviceModel"
+        prop="deviceModelName"
         label="设备型号"
         width="120"
         align="center"
       />
       <el-table-column
-        prop="serialNumber"
+        prop="deviceSerialEncrypt"
         label="序列号"
         width="150"
         align="center"
       />
       <el-table-column
-        prop="relatedDoc"
+        prop="devicebindFile"
         label="关联文档"
         width="100"
         align="center"
       >
         <template #default="scope">
           <el-tag
-            :type="scope.row.relatedDoc ? 'success' : 'danger'"
+            :type="scope.row.devicebindFile === 'Y' ? 'success' : 'danger'"
             effect="light"
           >
-            {{ scope.row.relatedDoc ? "是" : "否" }}
+            {{ scope.row.devicebindFile === 'Y' ? "是" : "否" }}
           </el-tag>
         </template>
       </el-table-column>
@@ -127,7 +127,7 @@
         align="center"
       />
       <el-table-column
-        prop="creator"
+        prop="createBy"
         label="创建人"
         width="100"
         align="center"
@@ -204,9 +204,9 @@
               >
                 <el-option
                   v-for="category in deviceCategories"
-                  :key="category.value"
-                  :label="category.label"
-                  :value="category.value"
+                  :key="category.id"
+                  :label="category.categoryName"
+                  :value="category.id"
                 />
               </el-select>
             </el-form-item>
@@ -223,9 +223,9 @@
               >
                 <el-option
                   v-for="model in filteredModels"
-                  :key="model.value"
-                  :label="model.label"
-                  :value="model.value"
+                  :key="model.id"
+                  :label="model.modelName"
+                  :value="model.id"
                 />
               </el-select>
             </el-form-item>
@@ -295,14 +295,14 @@
                 class="param-item"
               >
                 <div class="param-header">
-                  <span class="param-name">{{ param.paramName }}</span>
+                  <span class="param-name">{{ param.name }}</span>
                   <el-tag type="success" size="small" effect="light"
                     >Visible</el-tag
                   >
                 </div>
                 <div class="param-input-group">
                   <el-input
-                    v-model="param.paramValue"
+                    v-model="param.value"
                     placeholder="输入参数值"
                     style="width: 200px"
                   />
@@ -401,7 +401,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, onMounted, watch, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -414,15 +414,25 @@ import {
   ArrowRight,
   Download,
 } from "@element-plus/icons-vue";
+import {
+  getDeviceList as fetchDeviceList,
+  getCategoryAll,
+  getDeviceModelList,
+  getCategoryAttributeList,
+  addDevice,
+  editDevice,
+  deleteDevice,
+  getDeviceDetail
+} from '@/api/deviceManage';
 
 const router = useRouter();
 const route = useRoute();
 
 // 搜索表单数据
 const searchForm = reactive({
-  deviceCategory: "",
+  categoryName: "", // 改为 categoryName 以匹配后端
   deviceName: "",
-  deviceModel: "",
+  deviceModelName: "", // 改为 deviceModelName 以匹配后端
   relatedDoc: "",
   startDate: "",
   endDate: "",
@@ -456,75 +466,16 @@ const qrConfig = reactive({
   description: "",
 });
 
-// 设备分类列表
-const deviceCategories = ref([
-  { value: "CF", label: "离心机" },
-  { value: "CH", label: "底盘" },
-  { value: "IH", label: "感应加热" },
-  { value: "PE", label: "电力电子" },
-  { value: "SA", label: "频谱分析仪" },
-]);
+// 设备分类列表（从后端动态加载）
+const deviceCategories = ref([]);
 
-// 设备型号列表（按分类分组）
-const deviceModels = ref([
-  { category: "CF", value: "CF-200", label: "CF-200" },
-  { category: "CF", value: "CF-300", label: "CF-300" },
-  { category: "CH", value: "CH-Alpha", label: "CH-Alpha" },
-  { category: "CH", value: "CH-Beta", label: "CH-Beta" },
-  { category: "IH", value: "IH-Core", label: "IH-Core" },
-  { category: "PE", value: "PE-Unit", label: "PE-Unit" },
-  { category: "SA", value: "SA-Scope", label: "SA-Scope" },
-]);
+// 设备型号列表（从后端动态加载）
+const deviceModels = ref([]);
 
 // 过滤后的型号列表
 const filteredModels = ref([]);
 
-// 设备参数定义（按分类分组）
-const deviceParams = ref([
-  {
-    category: "CF",
-    params: [
-      {
-        paramName: "转速",
-        paramValue: "",
-        unit: "rpm",
-        description: "设备最大转速",
-      },
-      {
-        paramName: "容量",
-        paramValue: "",
-        unit: "ml",
-        description: "设备最大容量",
-      },
-      {
-        paramName: "温度范围",
-        paramValue: "",
-        unit: "°C",
-        description: "工作温度范围",
-      },
-    ],
-  },
-  {
-    category: "CH",
-    params: [
-      {
-        paramName: "尺寸",
-        paramValue: "",
-        unit: "mm",
-        description: "底盘尺寸",
-      },
-      {
-        paramName: "重量",
-        paramValue: "",
-        unit: "kg",
-        description: "底盘重量",
-      },
-      { paramName: "材质", paramValue: "", unit: "", description: "底盘材质" },
-    ],
-  },
-]);
-
-// 当前参数列表
+// 当前参数列表（从后端动态加载）
 const currentParams = ref([]);
 
 // 二维码下载弹窗数据
@@ -549,67 +500,31 @@ const formRules = reactive({
 });
 
 // 获取设备列表
-const getDeviceList = () => {
+const getDeviceList = async () => {
   loading.value = true;
-  // 模拟API请求
-  setTimeout(() => {
-    // 模拟数据
-    const mockData = [
-      {
-        deviceName: "CF-200-1",
-        deviceCategory: "CF",
-        deviceModel: "CF-200",
-        serialNumber: "SN2023001",
-        relatedDoc: true,
-        createTime: "2023-10-15",
-        creator: "张三",
-        id: 1,
-      },
-      {
-        deviceName: "CH-Alpha-1",
-        deviceCategory: "CH",
-        deviceModel: "CH-Alpha",
-        serialNumber: "SN2023002",
-        relatedDoc: false,
-        createTime: "2023-11-01",
-        creator: "李四",
-        id: 2,
-      },
-      {
-        deviceName: "IH-Core-1",
-        deviceCategory: "IH",
-        deviceModel: "IH-Core",
-        serialNumber: "SN2023003",
-        relatedDoc: false,
-        createTime: "2023-12-20",
-        creator: "王五",
-        id: 3,
-      },
-      {
-        deviceName: "PE-Unit-1",
-        deviceCategory: "PE",
-        deviceModel: "PE-Unit",
-        serialNumber: "SN2024001",
-        relatedDoc: false,
-        createTime: "2024-03-01",
-        creator: "张三",
-        id: 4,
-      },
-      {
-        deviceName: "SA-Scope-1",
-        deviceCategory: "SA",
-        deviceModel: "SA-Scope",
-        serialNumber: "SN2022001",
-        relatedDoc: false,
-        createTime: "2022-05-20",
-        creator: "赵六",
-        id: 5,
-      },
-    ];
-    deviceList.value = mockData;
-    total.value = mockData.length;
+  try {
+    const params = {
+      pageNum: pageNum.value,
+      pageSize: pageSize.value,
+      categoryName: searchForm.categoryName || undefined,
+      deviceName: searchForm.deviceName || undefined,
+      deviceModelName: searchForm.deviceModelName || undefined,
+    };
+    
+    const res = await fetchDeviceList(params);
+    
+    if (res.code === 200) {
+      deviceList.value = res.rows || [];
+      total.value = res.total || 0;
+    } else {
+      ElMessage.error(res.msg || '获取设备列表失败');
+    }
+  } catch (error) {
+    console.error('获取设备列表失败:', error);
+    ElMessage.error('获取设备列表失败');
+  } finally {
     loading.value = false;
-  }, 500);
+  }
 };
 
 // 查询设备
@@ -621,9 +536,9 @@ const handleSearch = () => {
 // 重置搜索条件
 const handleReset = () => {
   Object.assign(searchForm, {
-    deviceCategory: "",
+    categoryName: "",
     deviceName: "",
-    deviceModel: "",
+    deviceModelName: "",
     relatedDoc: "",
     startDate: "",
     endDate: "",
@@ -648,22 +563,9 @@ const generateDeviceName = () => {
   }
 };
 
-// 处理分类变化
+// 处理分类变化（保留用于兼容）
 const handleCategoryChange = () => {
-  // 过滤对应分类的型号
-  filteredModels.value = deviceModels.value.filter(
-    (model) => model.category === formData.deviceCategory
-  );
-  // 清空型号和设备名称
-  formData.deviceModel = "";
-  formData.deviceName = "";
-  // 加载对应分类的参数
-  const categoryParams = deviceParams.value.find(
-    (item) => item.category === formData.deviceCategory
-  );
-  currentParams.value = categoryParams
-    ? JSON.parse(JSON.stringify(categoryParams.params))
-    : [];
+  // 由 watch 自动处理
 };
 
 // 处理型号变化
@@ -700,21 +602,60 @@ const handleAdd = () => {
 };
 
 // 编辑设备
-const handleEdit = (row) => {
-  dialogTitle.value = "修改设备";
-  Object.assign(formData, { ...row });
-  // 加载型号列表
-  filteredModels.value = deviceModels.value.filter(
-    (model) => model.category === formData.deviceCategory
-  );
-  // 加载参数
-  const categoryParams = deviceParams.value.find(
-    (item) => item.category === formData.deviceCategory
-  );
-  currentParams.value = categoryParams
-    ? JSON.parse(JSON.stringify(categoryParams.params))
-    : [];
-  dialogVisible.value = true;
+const handleEdit = async (row) => {
+  try {
+    loading.value = true;
+    
+    // 获取设备详情
+    const res = await getDeviceDetail(row.id);
+    
+    if (res.code === 200) {
+      const detail = res.data;
+      
+      dialogTitle.value = "修改设备";
+      
+      // 填充表单数据
+      Object.assign(formData, {
+        id: detail.id,
+        deviceName: detail.deviceName,
+        deviceCategory: detail.categoryId,
+        deviceModel: detail.deviceModelId,
+        deviceVersion: `v${detail.deviceVersion || 1}`,
+        serialNumber: detail.deviceSerialEncrypt,
+        relatedDoc: detail.devicebindFile === 'Y',
+        createTime: detail.createTime,
+        creator: detail.createBy
+      });
+      
+      // 填充二维码配置
+      Object.assign(qrConfig, {
+        serializedAddress: detail.deviceQrcodeUrl || '',
+        description: detail.deviceQrcodeDes || ''
+      });
+      
+      // 加载型号列表和参数
+      await loadDeviceModels(detail.categoryId);
+      await loadCategoryAttributes(detail.categoryId);
+      
+      // 如果有设备属性，回填参数值
+      if (detail.attributes && detail.attributes.length > 0) {
+        currentParams.value = detail.attributes.map(attr => ({
+          name: attr.attributeName,
+          value: attr.value || '',
+          unit: attr.attributeUnit || ''
+        }));
+      }
+      
+      dialogVisible.value = true;
+    } else {
+      ElMessage.error(res.msg || '获取设备详情失败');
+    }
+  } catch (error) {
+    console.error('获取设备详情失败:', error);
+    ElMessage.error('获取设备详情失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 查看二维码
@@ -749,49 +690,86 @@ const handleRelate = (row) => {
 };
 
 // 删除设备
-const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除设备${row.deviceName}吗？`, "警告", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning",
-  })
-    .then(() => {
-      // 模拟删除
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm(`确定要删除设备${row.deviceName}吗？`, "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+    
+    loading.value = true;
+    const res = await deleteDevice(row.id);
+    
+    if (res.code === 200) {
       ElMessage.success("删除成功");
       getDeviceList();
-    })
-    .catch(() => {
-      // 取消删除
-    });
+    } else {
+      ElMessage.error(res.msg || "删除失败");
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除设备失败:', error);
+      ElMessage.error("删除失败");
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 提交表单
-const handleSubmit = () => {
-  formRef.value.validate((valid) => {
+const handleSubmit = async () => {
+  formRef.value.validate(async (valid) => {
     if (valid) {
-      // 设置创建时间
-      if (!formData.createTime) {
-        formData.createTime = new Date()
-          .toISOString()
-          .slice(0, 19)
-          .replace("T", " ");
+      try {
+        loading.value = true;
+        
+        // 准备提交数据
+        const submitData = {
+          deviceName: formData.deviceName,
+          categoryId: formData.deviceCategory, // 分类ID
+          deviceModelId: formData.deviceModel, // 型号ID
+          deviceSerialAdd: formData.serialNumber,
+          deviceSerialEncrypt: formData.serialNumber, // 加密序列号（可以做加密处理）
+          deviceVersion: parseInt(formData.deviceVersion?.replace('v', '') || '1'),
+          deviceQrcodeDes: qrConfig.description,
+          // 二维码序列化地址
+          qrCodeData: {
+            serializedAddress: qrConfig.serializedAddress,
+            description: qrConfig.description
+          },
+          // 设备参数
+          attributes: currentParams.value.map(param => ({
+            attributeName: param.name,
+            value: param.value,
+            unit: param.unit
+          })),
+          remark: ''
+        };
+        
+        let res;
+        if (dialogTitle.value === "新建设备") {
+          res = await addDevice(submitData);
+        } else {
+          submitData.id = formData.id;
+          res = await editDevice(submitData);
+        }
+        
+        if (res.code === 200) {
+          ElMessage.success(
+            dialogTitle.value === "新建设备" ? "新建设备成功" : "修改设备成功"
+          );
+          dialogVisible.value = false;
+          getDeviceList();
+        } else {
+          ElMessage.error(res.msg || "操作失败");
+        }
+      } catch (error) {
+        console.error('提交失败:', error);
+        ElMessage.error("操作失败");
+      } finally {
+        loading.value = false;
       }
-      // 设置创建人（模拟）
-      if (!formData.creator) {
-        formData.creator = "系统管理员";
-      }
-      // 模拟保存
-      const submitData = {
-        ...formData,
-        qrCode: { ...qrConfig },
-        deviceParams: [...currentParams],
-      };
-      console.log("提交数据:", submitData);
-      ElMessage.success(
-        dialogTitle.value === "新建设备" ? "新建设备成功" : "修改设备成功"
-      );
-      dialogVisible.value = false;
-      getDeviceList();
     }
   });
 };
@@ -809,9 +787,75 @@ const handleCurrentChange = (current) => {
   getDeviceList();
 };
 
+// 获取分类列表
+const loadCategories = async () => {
+  try {
+    const res = await getCategoryAll();
+    if (res.code === 200) {
+      deviceCategories.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取分类列表失败:', error);
+  }
+};
+
+// 获取型号列表
+const loadDeviceModels = async (categoryId) => {
+  if (!categoryId) {
+    filteredModels.value = [];
+    return;
+  }
+  
+  try {
+    const res = await getDeviceModelList({ categoryId });
+    if (res.code === 200) {
+      deviceModels.value = res.data || [];
+      filteredModels.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取型号列表失败:', error);
+  }
+};
+
+// 获取参数列表
+const loadCategoryAttributes = async (categoryId) => {
+  if (!categoryId) {
+    currentParams.value = [];
+    return;
+  }
+  
+  try {
+    const res = await getCategoryAttributeList({ categoryId });
+    if (res.code === 200) {
+      currentParams.value = (res.data || []).map(attr => ({
+        name: attr.attributeName,
+        value: attr.value || '',
+        unit: attr.attributeUnit || ''
+      }));
+    }
+  } catch (error) {
+    console.error('获取参数列表失败:', error);
+  }
+};
+
+// 监听分类变化
+watch(() => formData.deviceCategory, (newCategoryId) => {
+  if (newCategoryId) {
+    loadDeviceModels(newCategoryId);
+    loadCategoryAttributes(newCategoryId);
+  } else {
+    filteredModels.value = [];
+    currentParams.value = [];
+  }
+  // 清空型号和设备名称
+  formData.deviceModel = "";
+  formData.deviceName = "";
+});
+
 // 初始化数据
 onMounted(() => {
   getDeviceList();
+  loadCategories();
 });
 </script>
 
