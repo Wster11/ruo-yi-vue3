@@ -122,7 +122,7 @@ export const constantRoutes = [
         path: "manage",
         component: () => import("@/views/fileManager/index"),
         name: "FileManager",
-        meta: { title: "文件管理", icon: "tree" },
+        meta: { title: "文件管理", icon: "documentation" },
       },
       {
         path: "detail/:id",

@@ -35,52 +35,59 @@
 
         <el-form-item label="设备分类">
           <el-select
-            v-model="searchForm.deviceCategory"
+            v-model="searchForm.categoryName"
             placeholder="全部分类"
             class="search-select"
             clearable
           >
             <el-option label="全部分类" value="" />
-            <el-option label="CF - 离心机" value="CF" />
-            <el-option label="PM - 电力电子" value="PM" />
-            <el-option label="MX - 混合设备" value="MX" />
-            <el-option label="CH - 底盘" value="CH" />
+            <el-option
+              v-for="category in categoryOptions"
+              :key="category.id"
+              :label="category.categoryName"
+              :value="category.categoryName"
+            />
           </el-select>
         </el-form-item>
 
         <el-form-item label="文档语言">
           <el-select
-            v-model="searchForm.language"
+            v-model="searchForm.fileLanguage"
             placeholder="全部语言"
             class="search-select"
             clearable
           >
             <el-option label="全部语言" value="" />
-            <el-option label="中文（简体）" value="zh-CN" />
-            <el-option label="English" value="en-US" />
+            <el-option
+              v-for="lang in languageOptions"
+              :key="lang.id"
+              :label="lang.languageName"
+              :value="lang.languageName"
+            />
           </el-select>
         </el-form-item>
 
         <el-form-item label="是否关联">
           <el-select
-            v-model="searchForm.isLinked"
+            v-model="searchForm.isAssociated"
             placeholder="全部"
             class="search-select"
             clearable
           >
             <el-option label="全部" value="" />
-            <el-option label="是" value="true" />
-            <el-option label="否" value="false" />
+            <el-option label="是" value="1" />
+            <el-option label="否" value="0" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="开始日期">
           <el-date-picker
-            v-model="searchForm.startDate"
+            v-model="searchForm.beginCreateTime"
             type="date"
             placeholder="选择日期"
             class="search-date"
             clearable
+            value-format="YYYY-MM-DD"
           />
         </el-form-item>
 
@@ -118,19 +125,21 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="language" label="语言" width="140" align="center">
+        <el-table-column prop="fileLanguage" label="语言" width="140" align="center">
           <template #default="scope">
-            <span v-if="scope.row.language === 'zh-CN'">中文（简体）</span>
-            <span v-else-if="scope.row.language === 'en-US'">-</span>
-            <span v-else>{{ scope.row.language }}</span>
+            <span>{{ scope.row.fileLanguage || '-' }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="code" label="简码" width="100" align="center" />
-
-        <el-table-column prop="isLinked" label="关联" width="100" align="center">
+        <el-table-column prop="languageCode" label="简码" width="100" align="center">
           <template #default="scope">
-            <el-tag v-if="scope.row.isLinked" type="success" size="small" effect="plain">
+            <span>{{ scope.row.languageCode || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="isAssociated" label="关联" width="100" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.isAssociated === '1'" type="success" size="small" effect="plain">
               <el-icon><Link /></el-icon>
               是
             </el-tag>
@@ -139,27 +148,35 @@
         </el-table-column>
 
         <el-table-column
-          prop="deviceCategory"
+          prop="categoryName"
           label="绑定设备分类"
           width="140"
           align="center"
-        />
+        >
+          <template #default="scope">
+            <span>{{ scope.row.categoryName || '-' }}</span>
+          </template>
+        </el-table-column>
 
         <el-table-column
-          prop="deviceModel"
-          label="绑定设备型号"
+          prop="documentType"
+          label="文档类型"
           width="140"
           align="center"
-        />
+        >
+          <template #default="scope">
+            <span>{{ scope.row.documentType || '-' }}</span>
+          </template>
+        </el-table-column>
 
         <el-table-column
-          prop="uploadDate"
+          prop="createTime"
           label="上传日期"
-          width="130"
+          width="180"
           align="center"
         />
 
-        <el-table-column prop="uploader" label="上传人" width="120" align="center" />
+        <el-table-column prop="createBy" label="上传人" width="120" align="center" />
 
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="scope">
@@ -264,11 +281,12 @@
                   clearable
                   @change="handleCategoryChange"
                 >
-                  <el-option label="CF - 离心机" value="CF" />
-                  <el-option label="CH - 底盘" value="CH" />
-                  <el-option label="IH - 感应加热" value="IH" />
-                  <el-option label="PM - 电力电子" value="PM" />
-                  <el-option label="MX - 混合设备" value="MX" />
+                  <el-option
+                    v-for="category in categoryOptions"
+                    :key="category.id"
+                    :label="category.categoryName"
+                    :value="category.id"
+                  />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -283,8 +301,12 @@
                   style="width: 100%"
                   clearable
                 >
-                  <el-option label="中文（简体）" value="zh-CN" />
-                  <el-option label="English" value="en-US" />
+                  <el-option
+                    v-for="lang in languageOptions"
+                    :key="lang.id"
+                    :label="lang.languageName"
+                    :value="lang.languageCode"
+                  />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -310,8 +332,12 @@
                   clearable
                   :disabled="!uploadForm.deviceCategory"
                 >
-                  <el-option label="设备示例-1" value="device-1" />
-                  <el-option label="设备示例-2" value="device-2" />
+                  <el-option
+                    v-for="device in deviceOptions"
+                    :key="device.id"
+                    :label="device.deviceName"
+                    :value="device.id"
+                  />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -322,10 +348,12 @@
                   placeholder="操作手册"
                   style="width: 100%"
                 >
-                  <el-option label="操作手册" value="操作手册" />
-                  <el-option label="技术文档" value="技术文档" />
-                  <el-option label="使用说明" value="使用说明" />
-                  <el-option label="维护手册" value="维护手册" />
+                  <el-option
+                    v-for="docType in documentTypeOptions"
+                    :key="docType.id"
+                    :label="docType.typeName"
+                    :value="docType.typeCode"
+                  />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -413,78 +441,49 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { 
+  getFileList, 
+  getLanguageList, 
+  getDocumentTypeList, 
+  getCategoryList, 
+  getDeviceList,
+  addFile,
+  updateFileVersion
+} from '@/api/fileManage';
 
 const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
   fileName: "",
-  deviceCategory: "",
-  language: "",
-  isLinked: "",
-  startDate: "",
+  categoryName: "", // 改为 categoryName 以匹配后端
+  fileLanguage: "", // 改为 fileLanguage 以匹配后端
+  isAssociated: "", // 改为 isAssociated 以匹配后端
+  beginCreateTime: "", // 改为 beginCreateTime 以匹配后端
+  endCreateTime: "", // 可选的结束时间
 });
 
 // 加载状态
 const loading = ref(false);
 
 // 文件列表数据
-const fileList = ref([
-  {
-    id: 1,
-    fileName: "TD-RND-CF-001-cn",
-    language: "zh-CN",
-    code: "cn",
-    isLinked: true,
-    deviceCategory: "CF",
-    deviceModel: "CF-5000",
-    uploadDate: "2024-01-20",
-    uploader: "Admin",
-  },
-  {
-    id: 2,
-    fileName: "TD-RND-CF-001-en",
-    language: "en-US",
-    code: "en",
-    isLinked: true,
-    deviceCategory: "CF",
-    deviceModel: "CF-5000",
-    uploadDate: "2024-01-20",
-    uploader: "Admin",
-  },
-  {
-    id: 3,
-    fileName: "TD-RND-PM-001-cn",
-    language: "zh-CN",
-    code: "cn",
-    isLinked: true,
-    deviceCategory: "PM",
-    deviceModel: "PM-3000",
-    uploadDate: "2024-01-21",
-    uploader: "Admin",
-  },
-  {
-    id: 4,
-    fileName: "TD-RND-MX-001-cn",
-    language: "zh-CN",
-    code: "cn",
-    isLinked: true,
-    deviceCategory: "MX",
-    deviceModel: "MX-2000",
-    uploadDate: "2024-01-22",
-    uploader: "Admin",
-  },
-]);
+const fileList = ref([]);
 
 // 分页数据
 const pagination = reactive({
-  total: 4,
+  total: 0,
   currentPage: 1,
   pageSize: 10,
 });
+
+// 下拉列表数据
+const languageOptions = ref([]);
+const documentTypeOptions = ref([]);
+const categoryOptions = ref([]);
+const deviceOptions = ref([]);
 
 // 上传弹窗
 const uploadDialogVisible = ref(false);
@@ -624,7 +623,7 @@ const handleVersionInput = (value) => {
 const handleUploadSubmit = async () => {
   if (!uploadFormRef.value) return;
 
-  await uploadFormRef.value.validate((valid) => {
+  uploadFormRef.value.validate(async (valid) => {
     if (valid) {
       // 新增模式必须选择文件，更新模式文件可选
       if (!isUpdateMode.value && !uploadForm.file) {
@@ -634,48 +633,64 @@ const handleUploadSubmit = async () => {
 
       uploading.value = true;
 
-      // 模拟上传/更新
-      setTimeout(() => {
+      try {
         if (isUpdateMode.value) {
-          // 更新模式：更新现有文件
-          const index = fileList.value.findIndex((item) => item.id === currentFileId.value);
-          if (index > -1) {
-            fileList.value[index] = {
-              ...fileList.value[index],
-              fileName: uploadForm.fileName,
-              language: uploadForm.language,
-              code: uploadForm.code,
-              isLinked: uploadForm.deviceCategory ? true : false,
-              deviceCategory: uploadForm.deviceCategory,
-              uploadDate: uploadForm.uploadTime,
-              uploader: uploadForm.uploader,
-            };
+          // 更新模式：调用更新接口
+          const params = {
+            fileId: currentFileId.value,
+            fileName: uploadForm.fileName,
+            languageCode: uploadForm.language,
+            categoryId: uploadForm.deviceCategory,
+            documentTypeCode: uploadForm.fileType,
+            version: uploadForm.version,
+          };
+          
+          const res = await updateFileVersion(params);
+          
+          if (res.code === 200) {
             ElMessage.success("文件更新成功");
+            uploadDialogVisible.value = false;
+            // 刷新列表
+            fetchFileList();
+          } else {
+            ElMessage.error(res.msg || "文件更新失败");
           }
         } else {
-          // 新增模式：添加到列表
-          fileList.value.unshift({
-            id: fileList.value.length + 1,
+          // 新增模式：调用新增接口
+          const formData = {
             fileName: uploadForm.fileName,
-            language: uploadForm.language,
-            code: uploadForm.code,
-            isLinked: uploadForm.deviceCategory ? true : false,
-            deviceCategory: uploadForm.deviceCategory,
-            uploadDate: new Date().toISOString().split("T")[0],
-            uploader: "Admin",
-          });
-          pagination.total = fileList.value.length;
-          ElMessage.success("文件上传成功");
+            languageCode: uploadForm.language,
+            categoryId: uploadForm.deviceCategory,
+            deviceId: uploadForm.linkedDevice,
+            documentTypeCode: uploadForm.fileType,
+            version: uploadForm.version,
+            // 实际项目中需要处理文件上传
+            file: uploadForm.file,
+          };
+          
+          const res = await addFile(formData);
+          
+          if (res.code === 200) {
+            ElMessage.success("文件上传成功");
+            uploadDialogVisible.value = false;
+            // 刷新列表
+            pagination.currentPage = 1;
+            fetchFileList();
+          } else {
+            ElMessage.error(res.msg || "文件上传失败");
+          }
         }
-
-        uploading.value = false;
-        uploadDialogVisible.value = false;
 
         // 清空上传组件
         if (uploadRef.value) {
           uploadRef.value.clearFiles();
         }
-      }, 1500);
+      } catch (error) {
+        console.error('提交失败:', error);
+        ElMessage.error(isUpdateMode.value ? "文件更新失败" : "文件上传失败");
+      } finally {
+        uploading.value = false;
+      }
     }
   });
 };
@@ -689,23 +704,53 @@ const handleViewDetail = (row) => {
   });
 };
 
+// 获取文件列表
+const fetchFileList = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      pageNum: pagination.currentPage,
+      pageSize: pagination.pageSize,
+      fileName: searchForm.fileName || undefined,
+      categoryName: searchForm.categoryName || undefined,
+      fileLanguage: searchForm.fileLanguage || undefined,
+      isAssociated: searchForm.isAssociated || undefined,
+      beginCreateTime: searchForm.beginCreateTime || undefined,
+      endCreateTime: searchForm.endCreateTime || undefined,
+    };
+    
+    const res = await getFileList(params);
+    
+    if (res.code === 200) {
+      fileList.value = res.rows || [];
+      pagination.total = res.total || 0;
+    } else {
+      ElMessage.error(res.msg || '获取文件列表失败');
+    }
+  } catch (error) {
+    console.error('获取文件列表失败:', error);
+    ElMessage.error('获取文件列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 查询
 const handleSearch = () => {
-  loading.value = true;
-  // 模拟查询
-  setTimeout(() => {
-    ElMessage.success("查询成功");
-    loading.value = false;
-  }, 500);
+  pagination.currentPage = 1; // 重置到第一页
+  fetchFileList();
 };
 
 // 重置
 const handleReset = () => {
   searchForm.fileName = "";
-  searchForm.deviceCategory = "";
-  searchForm.language = "";
-  searchForm.isLinked = "";
-  searchForm.startDate = "";
+  searchForm.categoryName = "";
+  searchForm.fileLanguage = "";
+  searchForm.isAssociated = "";
+  searchForm.beginCreateTime = "";
+  searchForm.endCreateTime = "";
+  pagination.currentPage = 1;
+  fetchFileList();
   ElMessage.info("已重置搜索条件");
 };
 
@@ -738,14 +783,14 @@ const handleUpdate = (row) => {
 
   // 填充表单数据
   uploadForm.fileName = row.fileName;
-  uploadForm.deviceCategory = row.deviceCategory;
-  uploadForm.language = row.language;
-  uploadForm.code = row.code;
+  uploadForm.deviceCategory = row.categoryId || ""; // 使用分类ID
+  uploadForm.language = row.languageCode || ""; // 使用语言代码
+  uploadForm.code = row.languageCode || "";
   uploadForm.linkedDevice = ""; // 如果有具体设备数据，可以在这里填充
-  uploadForm.fileType = "操作手册"; // 如果表格有该字段，使用 row.fileType
-  uploadForm.version = row.version || 1; // 如果表格有该字段，使用 row.version
-  uploadForm.uploader = row.uploader || "系统管理员";
-  uploadForm.uploadTime = row.uploadDate || new Date().toISOString().split("T")[0];
+  uploadForm.fileType = row.documentTypeCode || "MANUAL"; // 使用文档类型代码
+  uploadForm.version = parseFloat(row.fileVersion?.replace('v', '')) || 1; // 解析版本号
+  uploadForm.uploader = row.createBy || "系统管理员";
+  uploadForm.uploadTime = row.createTime?.split(' ')[0] || new Date().toISOString().split("T")[0];
   uploadForm.file = null; // 更新时文件可选
 
   // 设置为更新模式
@@ -758,19 +803,91 @@ const handleUpdate = (row) => {
 // 页码改变
 const handlePageChange = (page) => {
   pagination.currentPage = page;
-  // 加载数据
+  fetchFileList();
 };
 
 // 每页条数改变
 const handleSizeChange = (size) => {
   pagination.pageSize = size;
   pagination.currentPage = 1;
-  // 加载数据
+  fetchFileList();
 };
+
+// 获取语言列表
+const fetchLanguageList = async () => {
+  try {
+    const res = await getLanguageList();
+    if (res.code === 200) {
+      languageOptions.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取语言列表失败:', error);
+  }
+};
+
+// 获取文件类型列表
+const fetchDocumentTypeList = async () => {
+  try {
+    const res = await getDocumentTypeList();
+    if (res.code === 200) {
+      documentTypeOptions.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取文件类型列表失败:', error);
+  }
+};
+
+// 获取分类列表
+const fetchCategoryList = async () => {
+  try {
+    const res = await getCategoryList();
+    if (res.code === 200) {
+      categoryOptions.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取分类列表失败:', error);
+  }
+};
+
+// 获取设备列表
+const fetchDeviceList = async () => {
+  try {
+    const res = await getDeviceList();
+    if (res.code === 200) {
+      deviceOptions.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取设备列表失败:', error);
+  }
+};
+
+// 监听语言选择，自动生成简码
+watch(() => uploadForm.language, (newVal) => {
+  if (newVal === 'zh-CN') {
+    uploadForm.code = 'cn';
+  } else if (newVal === 'en-US') {
+    uploadForm.code = 'en';
+  } else if (newVal === 'ja-JP') {
+    uploadForm.code = 'ja';
+  } else if (newVal === 'de-DE') {
+    uploadForm.code = 'de';
+  } else if (newVal === 'fr-FR') {
+    uploadForm.code = 'fr';
+  } else {
+    uploadForm.code = '';
+  }
+});
 
 // 初始化
 onMounted(() => {
-  // 可以在这里加载数据
+  // 加载文件列表
+  fetchFileList();
+  
+  // 加载下拉列表数据
+  fetchLanguageList();
+  fetchDocumentTypeList();
+  fetchCategoryList();
+  fetchDeviceList();
 });
 </script>
 
