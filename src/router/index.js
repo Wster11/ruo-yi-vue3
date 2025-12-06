@@ -48,6 +48,21 @@ export const constantRoutes = [
     hidden: true,
   },
   {
+    path: "/document",
+    component: () => import("@/views/h5/index"),
+    hidden: true,
+  },
+  {
+    path: "/document/device",
+    component: () => import("@/views/h5/device-info"),
+    hidden: true,
+  },
+  {
+    path: "/document/files",
+    component: () => import("@/views/h5/tech-files"),
+    hidden: true,
+  },
+  {
     path: "/:pathMatch(.*)*",
     component: () => import("@/views/error/404"),
     hidden: true,
