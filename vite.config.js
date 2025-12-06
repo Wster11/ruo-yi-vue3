@@ -1,9 +1,11 @@
 import { defineConfig, loadEnv } from "vite";
 import path from "path";
 import createVitePlugins from "./vite/plugins";
+import { viteMockServe } from 'vite-plugin-mock';
 
 //const baseUrl = "https://vue.ruoyi.vip/prod-api/"; // 后端接口
 const baseUrl = "http://182.40.34.54:8864/"; // 后端接口
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd());
@@ -13,7 +15,15 @@ export default defineConfig(({ mode, command }) => {
     // 默认情况下，vite 会假设你的应用是被部署在一个域名的根路径上
     // 例如 https://www.ruoyi.vip/。如果应用被部署在一个子路径上，你就需要用这个选项指定这个子路径。例如，如果你的应用被部署在 https://www.ruoyi.vip/admin/，则设置 baseUrl 为 /admin/。
     base: VITE_APP_ENV === "production" ? "/" : "/",
-    plugins: createVitePlugins(env, command === "build"),
+    plugins: [
+      ...createVitePlugins(env, command === "build"),
+      // 配置 vite-plugin-mock - 创建真实的 HTTP Mock 服务器
+      viteMockServe({
+        mockPath: 'mock', // mock 文件存放的目录（相对于项目根目录）
+        enable: command === 'serve', // 只在开发环境启用
+        logger: true, // 是否在控制台显示请求日志
+      })
+    ],
     resolve: {
       // https://cn.vitejs.dev/config/#resolve-alias
       alias: {

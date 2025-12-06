@@ -102,7 +102,6 @@
       <el-table-column
         prop="deviceSerialEncrypt"
         label="序列号"
-        width="150"
         align="center"
       />
       <el-table-column
@@ -129,35 +128,50 @@
       <el-table-column
         prop="createBy"
         label="创建人"
-        width="100"
         align="center"
       />
-      <el-table-column label="操作" align="center" fixed="right">
+      <el-table-column label="操作" align="center" width="180" fixed="right">
         <template #default="scope">
-          <el-button
-            type="success"
-            size="small"
-            @click="handleQrCode(scope.row)"
-          >
-            <el-icon><View /></el-icon> 二维码
-          </el-button>
-          <el-button type="primary" size="small" @click="handleEdit(scope.row)">
-            <el-icon><Edit /></el-icon> 修改
-          </el-button>
-          <el-button
-            type="warning"
-            size="small"
-            @click="handleRelate(scope.row)"
-          >
-            <el-icon><Link /></el-icon> 关联
-          </el-button>
-          <el-button
-            type="danger"
-            size="small"
-            @click="handleDelete(scope.row)"
-          >
-            <el-icon><Delete /></el-icon> 删除
-          </el-button>
+          <el-tooltip content="查看二维码" placement="top">
+            <el-button
+              type="success"
+              size="small"
+              circle
+              @click="handleQrCode(scope.row)"
+            >
+              <el-icon><View /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="修改" placement="top">
+            <el-button 
+              type="primary" 
+              size="small" 
+              circle
+              @click="handleEdit(scope.row)"
+            >
+              <el-icon><Edit /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="关联文档" placement="top">
+            <el-button
+              type="warning"
+              size="small"
+              circle
+              @click="handleRelate(scope.row)"
+            >
+              <el-icon><Link /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="删除" placement="top">
+            <el-button
+              type="danger"
+              size="small"
+              circle
+              @click="handleDelete(scope.row)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>

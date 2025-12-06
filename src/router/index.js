@@ -74,13 +74,13 @@ export const constantRoutes = [
     path: "/device",
     component: Layout,
     redirect: "/device/list",
-    meta: { title: "设备管理", icon: "device", alwaysShow: true },
+    meta: { title: "设备列表", icon: "device", alwaysShow: true },
     children: [
       {
         path: "list",
         component: () => import("@/views/device/index"),
         name: "DeviceList",
-        meta: { title: "设备列表", icon: "list" },
+        meta: { title: "设备管理", icon: "list" },
       },
       {
         path: "detail/:id",
