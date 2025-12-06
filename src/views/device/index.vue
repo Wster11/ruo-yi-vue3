@@ -20,16 +20,39 @@
     <div class="search-container">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="设备分类">
-          <el-input
-            v-model="searchForm.categoryName"
-            placeholder="分类名称"
-          />
+          <el-select
+            v-model="searchForm.categoryId"
+            placeholder="请选择分类"
+            clearable
+            @change="handleSearchCategoryChange"
+            style="width: 180px"
+          >
+            <el-option
+              v-for="category in searchCategories"
+              :key="category.id"
+              :label="category.categoryName"
+              :value="category.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="设备名称">
           <el-input v-model="searchForm.deviceName" placeholder="设备名称" />
         </el-form-item>
         <el-form-item label="设备型号">
-          <el-input v-model="searchForm.deviceModelName" placeholder="型号" />
+          <el-select
+            v-model="searchForm.deviceModelId"
+            placeholder="请选择型号"
+            clearable
+            :disabled="!searchForm.categoryId"
+            style="width: 180px"
+          >
+            <el-option
+              v-for="model in searchModels"
+              :key="model.id"
+              :label="model.modelName"
+              :value="model.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="关联文档">
           <el-select v-model="searchForm.relatedDoc" placeholder="全部">
@@ -225,18 +248,18 @@
               </el-select>
             </el-form-item>
             <el-form-item
-              label="设备编码"
+              label="设备型号"
               prop="deviceModel"
               :disabled="!formData.deviceCategory"
             >
               <el-select
                 v-model="formData.deviceModel"
-                placeholder="请输入或选择编码"
+                placeholder="请选择设备型号"
                 @change="handleModelChange"
                 style="width: 100%"
               >
                 <el-option
-                  v-for="model in filteredModels"
+                  v-for="model in deviceModels"
                   :key="model.id"
                   :label="model.modelName"
                   :value="model.id"
@@ -264,23 +287,23 @@
               />
             </el-form-item>
             <el-form-item
-              label="设备型号"
-              prop="serialNumber"
+              label="设备编码"
+              prop="deviceCode"
               :disabled="!formData.deviceCategory"
             >
               <el-select
-                v-model="formData.serialNumber"
-                placeholder="请输入或选择设备型号"
-                @change="handleSerialNumberChange"
+                v-model="formData.deviceCode"
+                placeholder="请选择设备编码"
+                @change="handleDeviceCodeChange"
                 style="width: 100%"
                 filterable
                 allow-create
               >
                 <el-option
-                  v-for="model in filteredModels"
-                  :key="model.value"
-                  :label="model.label"
-                  :value="model.value"
+                  v-for="code in deviceCodes"
+                  :key="code.id"
+                  :label="code.codeName"
+                  :value="code.codeName"
                 />
               </el-select>
             </el-form-item>
@@ -300,7 +323,7 @@
               </el-tag>
             </div>
             <div v-else-if="currentParams.length === 0" class="no-params">
-              <el-empty description="该分类暂无参数定义" image-size="100" />
+              <el-empty description="该分类暂无参数定义" :image-size="100" />
             </div>
             <div v-else class="params-container">
               <div
@@ -360,7 +383,7 @@
                   v-model="qrConfig.description"
                   placeholder="请输入扫描二维码后显示的描述信息"
                   type="textarea"
-                  rows="2"
+                  :rows="2"
                   :disabled="!formData.deviceCategory"
                 />
               </el-form-item>
@@ -432,6 +455,7 @@ import {
   getDeviceList as fetchDeviceList,
   getCategoryAll,
   getDeviceModelList,
+  getDeviceCodeList,
   getCategoryAttributeList,
   addDevice,
   editDevice,
@@ -444,13 +468,17 @@ const route = useRoute();
 
 // 搜索表单数据
 const searchForm = reactive({
-  categoryName: "", // 改为 categoryName 以匹配后端
+  categoryId: "", // 分类ID
   deviceName: "",
-  deviceModelName: "", // 改为 deviceModelName 以匹配后端
+  deviceModelId: "", // 型号ID
   relatedDoc: "",
   startDate: "",
   endDate: "",
 });
+
+// 搜索区域的分类和型号列表
+const searchCategories = ref([]);
+const searchModels = ref([]);
 
 // 表格数据
 const deviceList = ref([]);
@@ -468,7 +496,7 @@ const formData = reactive({
   deviceCategory: "",
   deviceModel: "",
   deviceVersion: "v1.0",
-  serialNumber: "",
+  deviceCode: "",
   relatedDoc: false,
   createTime: "",
   creator: "",
@@ -486,8 +514,8 @@ const deviceCategories = ref([]);
 // 设备型号列表（从后端动态加载）
 const deviceModels = ref([]);
 
-// 过滤后的型号列表
-const filteredModels = ref([]);
+// 设备编码列表（从后端动态加载）
+const deviceCodes = ref([]);
 
 // 当前参数列表（从后端动态加载）
 const currentParams = ref([]);
@@ -508,8 +536,8 @@ const formRules = reactive({
   deviceModel: [
     { required: true, message: "请选择设备型号", trigger: "change" },
   ],
-  serialNumber: [
-    { required: true, message: "请输入设备序列号", trigger: "blur" },
+  deviceCode: [
+    { required: true, message: "请选择设备编码", trigger: "change" },
   ],
 });
 
@@ -517,12 +545,20 @@ const formRules = reactive({
 const getDeviceList = async () => {
   loading.value = true;
   try {
+    // 根据ID获取名称
+    const categoryName = searchForm.categoryId 
+      ? searchCategories.value.find(c => c.id === searchForm.categoryId)?.categoryName 
+      : undefined;
+    const deviceModelName = searchForm.deviceModelId 
+      ? searchModels.value.find(m => m.id === searchForm.deviceModelId)?.modelName 
+      : undefined;
+    
     const params = {
       pageNum: pageNum.value,
       pageSize: pageSize.value,
-      categoryName: searchForm.categoryName || undefined,
+      categoryName: categoryName,
       deviceName: searchForm.deviceName || undefined,
-      deviceModelName: searchForm.deviceModelName || undefined,
+      deviceModelName: deviceModelName,
     };
     
     const res = await fetchDeviceList(params);
@@ -550,24 +586,51 @@ const handleSearch = () => {
 // 重置搜索条件
 const handleReset = () => {
   Object.assign(searchForm, {
-    categoryName: "",
+    categoryId: "",
     deviceName: "",
-    deviceModelName: "",
+    deviceModelId: "",
     relatedDoc: "",
     startDate: "",
     endDate: "",
   });
+  searchModels.value = [];
   pageNum.value = 1;
   getDeviceList();
 };
 
+// 处理搜索区域分类变化
+const handleSearchCategoryChange = async (categoryId) => {
+  // 清空型号选择
+  searchForm.deviceModelId = "";
+  
+  if (categoryId) {
+    // 加载该分类下的型号列表
+    try {
+      const res = await getDeviceModelList({ categoryId });
+      if (res.code === 200) {
+        searchModels.value = res.data || [];
+      }
+    } catch (error) {
+      console.error('获取型号列表失败:', error);
+    }
+  } else {
+    searchModels.value = [];
+  }
+};
+
 // 生成设备名称和二维码序列化地址
 const generateDeviceName = () => {
-  if (formData.deviceModel && formData.serialNumber) {
-    // 设备名称 = 设备分类 + '-' + 设备编码
-    formData.deviceName = `${formData.deviceCategory}-${formData.serialNumber}`;
+  if (formData.deviceModel && formData.deviceCode) {
+    // 获取分类名称和型号名称
+    const category = deviceCategories.value.find(c => c.id === formData.deviceCategory);
+    const model = deviceModels.value.find(m => m.id === formData.deviceModel);
+    
+    // 设备名称 = 分类名称 + '-' + 型号名称 + '-' + 设备编码
+    formData.deviceName = `${category?.categoryName || ''}-${model?.modelName || ''}-${formData.deviceCode}`;
+    
     // 生成序列化地址
-    qrConfig.serializedAddress = `device://${formData.deviceCategory}/${formData.deviceModel}/${formData.serialNumber}`;
+    qrConfig.serializedAddress = `device://${category?.categoryCode || ''}/${model?.modelCode || ''}/${formData.deviceCode}`;
+    
     // 自动生成二维码描述信息 BP+设备名称
     qrConfig.description = `BP-${formData.deviceName}`;
   } else {
@@ -584,11 +647,15 @@ const handleCategoryChange = () => {
 
 // 处理型号变化
 const handleModelChange = () => {
+  // 清空设备编码
+  formData.deviceCode = "";
+  // 加载该型号对应的设备编码列表
+  loadDeviceCodes(formData.deviceCategory);
   generateDeviceName();
 };
 
-// 处理设备型号变化
-const handleSerialNumberChange = () => {
+// 处理设备编码变化
+const handleDeviceCodeChange = () => {
   generateDeviceName();
 };
 
@@ -600,7 +667,7 @@ const handleAdd = () => {
     deviceCategory: "",
     deviceModel: "",
     deviceVersion: "v1.0",
-    serialNumber: "",
+    deviceCode: "",
     relatedDoc: false,
     createTime: "",
     creator: "",
@@ -610,7 +677,8 @@ const handleAdd = () => {
     serializedAddress: "",
     description: "",
   });
-  filteredModels.value = [];
+  deviceModels.value = [];
+  deviceCodes.value = [];
   currentParams.value = [];
   dialogVisible.value = true;
 };
@@ -635,7 +703,7 @@ const handleEdit = async (row) => {
         deviceCategory: detail.categoryId,
         deviceModel: detail.deviceModelId,
         deviceVersion: `v${detail.deviceVersion || 1}`,
-        serialNumber: detail.deviceSerialEncrypt,
+        deviceCode: detail.deviceSerialEncrypt,
         relatedDoc: detail.devicebindFile === 'Y',
         createTime: detail.createTime,
         creator: detail.createBy
@@ -647,8 +715,9 @@ const handleEdit = async (row) => {
         description: detail.deviceQrcodeDes || ''
       });
       
-      // 加载型号列表和参数
+      // 加载型号列表、编码列表和参数
       await loadDeviceModels(detail.categoryId);
+      await loadDeviceCodes(detail.categoryId);
       await loadCategoryAttributes(detail.categoryId);
       
       // 如果有设备属性，回填参数值
@@ -743,8 +812,8 @@ const handleSubmit = async () => {
           deviceName: formData.deviceName,
           categoryId: formData.deviceCategory, // 分类ID
           deviceModelId: formData.deviceModel, // 型号ID
-          deviceSerialAdd: formData.serialNumber,
-          deviceSerialEncrypt: formData.serialNumber, // 加密序列号（可以做加密处理）
+          deviceSerialAdd: formData.deviceCode, // 设备编码
+          deviceSerialEncrypt: formData.deviceCode, // 加密序列号（可以做加密处理）
           deviceVersion: parseInt(formData.deviceVersion?.replace('v', '') || '1'),
           deviceQrcodeDes: qrConfig.description,
           // 二维码序列化地址
@@ -801,7 +870,7 @@ const handleCurrentChange = (current) => {
   getDeviceList();
 };
 
-// 获取分类列表
+// 获取分类列表（用于表单弹窗）
 const loadCategories = async () => {
   try {
     const res = await getCategoryAll();
@@ -813,10 +882,22 @@ const loadCategories = async () => {
   }
 };
 
+// 获取搜索区域的分类列表
+const loadSearchCategories = async () => {
+  try {
+    const res = await getCategoryAll();
+    if (res.code === 200) {
+      searchCategories.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取搜索分类列表失败:', error);
+  }
+};
+
 // 获取型号列表
 const loadDeviceModels = async (categoryId) => {
   if (!categoryId) {
-    filteredModels.value = [];
+    deviceModels.value = [];
     return;
   }
   
@@ -824,10 +905,26 @@ const loadDeviceModels = async (categoryId) => {
     const res = await getDeviceModelList({ categoryId });
     if (res.code === 200) {
       deviceModels.value = res.data || [];
-      filteredModels.value = res.data || [];
     }
   } catch (error) {
     console.error('获取型号列表失败:', error);
+  }
+};
+
+// 获取设备编码列表
+const loadDeviceCodes = async (categoryId) => {
+  if (!categoryId) {
+    deviceCodes.value = [];
+    return;
+  }
+  
+  try {
+    const res = await getDeviceCodeList({ categoryId });
+    if (res.code === 200) {
+      deviceCodes.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取设备编码列表失败:', error);
   }
 };
 
@@ -856,13 +953,16 @@ const loadCategoryAttributes = async (categoryId) => {
 watch(() => formData.deviceCategory, (newCategoryId) => {
   if (newCategoryId) {
     loadDeviceModels(newCategoryId);
+    loadDeviceCodes(newCategoryId);
     loadCategoryAttributes(newCategoryId);
   } else {
-    filteredModels.value = [];
+    deviceModels.value = [];
+    deviceCodes.value = [];
     currentParams.value = [];
   }
-  // 清空型号和设备名称
+  // 清空型号、编码和设备名称
   formData.deviceModel = "";
+  formData.deviceCode = "";
   formData.deviceName = "";
 });
 
@@ -870,6 +970,7 @@ watch(() => formData.deviceCategory, (newCategoryId) => {
 onMounted(() => {
   getDeviceList();
   loadCategories();
+  loadSearchCategories();
 });
 </script>
 

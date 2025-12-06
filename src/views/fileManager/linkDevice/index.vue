@@ -45,18 +45,18 @@
 
         <el-form-item label="设备分类">
           <el-select
-            v-model="searchForm.deviceCategory"
+            v-model="searchForm.categoryName"
             placeholder="全部"
             class="search-select"
             clearable
           >
             <el-option label="全部" value="" />
-            <el-option label="CF" value="CF" />
-            <el-option label="CH" value="CH" />
-            <el-option label="IH" value="IH" />
-            <el-option label="PE" value="PE" />
-            <el-option label="SA" value="SA" />
-            <el-option label="WM" value="WM" />
+            <el-option
+              v-for="category in categoryOptions"
+              :key="category.id"
+              :label="category.categoryName"
+              :value="category.categoryName"
+            />
           </el-select>
         </el-form-item>
 
@@ -113,28 +113,33 @@
         </el-table-column>
 
         <el-table-column
-          prop="category"
+          prop="categoryName"
           label="分类"
           width="120"
           align="center"
         >
           <template #default="scope">
             <el-tag
-              v-if="scope.row.category"
+              v-if="scope.row.categoryName"
               type="info"
               effect="plain"
               size="small"
             >
-              {{ scope.row.category }}
+              {{ scope.row.categoryName }}
             </el-tag>
             <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="model" label="型号" width="150" align="center" />
+        <el-table-column 
+          prop="deviceModelName" 
+          label="型号" 
+          width="150" 
+          align="center" 
+        />
 
         <el-table-column
-          prop="serialNumber"
+          prop="deviceSerialAdd"
           label="序列号"
           width="180"
           align="center"
@@ -142,7 +147,8 @@
 
         <el-table-column
           prop="createTime"
-          width="150"
+          label="创建时间"
+          width="180"
           align="center"
         />
       </el-table>
@@ -175,12 +181,18 @@ import {
   Search,
   RefreshLeft,
 } from "@element-plus/icons-vue";
+import {
+  getDeviceAllList,
+  bindSelectDevice,
+  getCategoryList
+} from '@/api/fileManage';
 
 const route = useRoute();
 const router = useRouter();
 
-// 文件名称
-const fileName = ref("TD-RND-CF-001-cn");
+// 文件ID和名称
+const fileId = ref(null);
+const fileName = ref("");
 
 // 加载状态
 const loading = ref(false);
@@ -188,7 +200,7 @@ const loading = ref(false);
 // 搜索表单
 const searchForm = reactive({
   deviceName: "",
-  deviceCategory: "",
+  categoryName: "", // 改为 categoryName 匹配后端
   deviceModel: "",
 });
 
@@ -196,77 +208,15 @@ const searchForm = reactive({
 const selectedDevices = ref([]);
 const deviceTableRef = ref(null);
 
-// 设备列表数据
-const deviceList = ref([
-  {
-    id: 1,
-    deviceName: "CF-200-1",
-    category: "",
-    model: "CF-200",
-    serialNumber: "SN2023001",
-    createTime: "2023-10-15",
-  },
-  {
-    id: 2,
-    deviceName: "CH-Alpha-1",
-    category: "CH",
-    model: "CH-Alpha",
-    serialNumber: "SN2023002",
-    createTime: "2023-11-01",
-  },
-  {
-    id: 3,
-    deviceName: "IH-Core-1",
-    category: "IH",
-    model: "IH-Core",
-    serialNumber: "SN998877",
-    createTime: "2023-01-20",
-  },
-  {
-    id: 4,
-    deviceName: "PE-Unit-1",
-    category: "PE",
-    model: "PE-Unit",
-    serialNumber: "SN-S001",
-    createTime: "2024-03-01",
-  },
-  {
-    id: 5,
-    deviceName: "SA-Scope-1",
-    category: "SA",
-    model: "SA-Scope",
-    serialNumber: "RB-009",
-    createTime: "2022-05-20",
-  },
-  {
-    id: 6,
-    deviceName: "WM-001-1",
-    category: "WM",
-    model: "WM-001",
-    serialNumber: "WM-001-SN",
-    createTime: "2024-01-15",
-  },
-  {
-    id: 7,
-    deviceName: "CF-Lite-1",
-    category: "",
-    model: "CF-Lite",
-    serialNumber: "SN-L002",
-    createTime: "2024-02-10",
-  },
-  {
-    id: 8,
-    deviceName: "CH-Beta-1",
-    category: "CH",
-    model: "CH-Beta",
-    serialNumber: "SN-B003",
-    createTime: "2024-03-05",
-  },
-]);
+// 分类列表
+const categoryOptions = ref([]);
+
+// 设备列表数据（从后端加载）
+const deviceList = ref([]);
 
 // 分页数据
 const pagination = reactive({
-  total: 8,
+  total: 0,
   currentPage: 1,
   pageSize: 10,
 });
@@ -281,22 +231,78 @@ const handleCancel = () => {
   router.back();
 };
 
+// 获取设备列表
+const fetchDeviceList = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      fileId: fileId.value,
+    };
+    
+    const res = await getDeviceAllList(params);
+    
+    if (res.code === 200) {
+      deviceList.value = res.data?.deviceList || [];
+      // 如果后端返回了已绑定的设备，可以预选
+      // const boundDevices = deviceList.value.filter(d => d.isBind);
+      // 预选逻辑...
+    } else {
+      ElMessage.error(res.msg || '获取设备列表失败');
+    }
+  } catch (error) {
+    console.error('获取设备列表失败:', error);
+    ElMessage.error('获取设备列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 获取分类列表
+const fetchCategoryList = async () => {
+  try {
+    const res = await getCategoryList();
+    if (res.code === 200) {
+      categoryOptions.value = res.data || [];
+    }
+  } catch (error) {
+    console.error('获取分类列表失败:', error);
+  }
+};
+
 // 保存关联
-const handleSave = () => {
+const handleSave = async () => {
   if (selectedDevices.value.length === 0) {
     ElMessage.warning("请至少选择一个设备");
     return;
   }
 
-  // 这里应该调用API保存关联关系
-  console.log("保存关联的设备:", selectedDevices.value);
-
-  ElMessage.success(`成功关联 ${selectedDevices.value.length} 个设备`);
-
-  // 返回详情页
-  setTimeout(() => {
-    router.back();
-  }, 500);
+  try {
+    loading.value = true;
+    
+    // 提取设备ID列表
+    const deviceIds = selectedDevices.value.map(d => d.id).join(',');
+    
+    const res = await bindSelectDevice({
+      fileId: fileId.value,
+      deviceId: deviceIds
+    });
+    
+    if (res.code === 200) {
+      ElMessage.success(`成功关联 ${selectedDevices.value.length} 个设备`);
+      
+      // 返回详情页
+      setTimeout(() => {
+        router.back();
+      }, 500);
+    } else {
+      ElMessage.error(res.msg || '关联失败');
+    }
+  } catch (error) {
+    console.error('关联设备失败:', error);
+    ElMessage.error('关联失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 选择改变
@@ -306,50 +312,46 @@ const handleSelectionChange = (selection) => {
 
 // 查询
 const handleSearch = () => {
-  loading.value = true;
-  // 模拟查询
-  setTimeout(() => {
-    ElMessage.success("查询成功");
-    loading.value = false;
-  }, 500);
+  pagination.currentPage = 1;
+  fetchDeviceList();
 };
 
 // 重置
 const handleReset = () => {
   searchForm.deviceName = "";
-  searchForm.deviceCategory = "";
+  searchForm.categoryName = "";
   searchForm.deviceModel = "";
-  ElMessage.info("已重置搜索条件");
+  pagination.currentPage = 1;
+  fetchDeviceList();
 };
 
 // 页码改变
 const handlePageChange = (page) => {
   pagination.currentPage = page;
-  // 加载数据
+  fetchDeviceList();
 };
 
 // 每页条数改变
 const handleSizeChange = (size) => {
   pagination.pageSize = size;
   pagination.currentPage = 1;
-  // 加载数据
+  fetchDeviceList();
 };
 
 // 初始化
 onMounted(() => {
   // 从路由参数获取文件信息
-  const fileId = route.params.fileId || route.query.fileId;
-  fileName.value = route.query.fileName || "TD-RND-CF-001-cn";
+  fileId.value = route.params.fileId || route.query.fileId;
+  fileName.value = route.query.fileName || "";
 
-  if (fileId) {
-    console.log("文件ID:", fileId);
-    // 这里可以加载已关联的设备，并在表格中预选
+  if (!fileId.value) {
+    ElMessage.error('缺少文件ID参数');
+    return;
   }
 
-  // 如果有已关联的设备，可以预选
-  // nextTick(() => {
-  //   deviceTableRef.value.toggleRowSelection(deviceList.value[0], true);
-  // });
+  // 加载数据
+  fetchDeviceList();
+  fetchCategoryList();
 });
 </script>
 

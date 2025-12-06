@@ -83,6 +83,7 @@
       <div class="card-content">
         <el-table
           :data="deviceList"
+          v-loading="loading"
           style="width: 100%"
           :header-cell-style="{
             backgroundColor: '#fafafa',
@@ -119,12 +120,17 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
+<script setup name="FileDetail">
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { getBindDeviceList } from "@/api/fileManage";
 
 const route = useRoute();
 const router = useRouter();
+
+// 加载状态
+const loading = ref(false);
 
 // 文件信息
 const fileInfo = ref({
@@ -139,21 +145,52 @@ const fileInfo = ref({
 });
 
 // 关联设备列表
-const deviceList = ref([
-  {
-    id: 1,
-    deviceName: "CF-200-1",
-    deviceCategory: "",
-    deviceModel: "CF-200",
-    createTime: "2023-10-15",
-    creator: "张三",
-  },
-]);
+const deviceList = ref([]);
 
+
+// 获取已关联的设备列表
+const loadBindDeviceList = async (fileId) => {
+  if (!fileId) {
+    ElMessage.warning("文件ID不存在");
+    return;
+  }
+
+  try {
+    loading.value = true;
+    const res = await getBindDeviceList({ fileId });
+
+    if (res.code === 200) {
+      // Mock 数据结构：res.data = { fileId, total, deviceList }
+      const deviceData = res.data?.deviceList || res.data || [];
+      
+      // 映射后端数据到前端显示格式
+      deviceList.value = deviceData.map((item) => ({
+        id: item.id,
+        deviceName: item.deviceName || "-",
+        deviceCategory: item.categoryName || "",
+        deviceModel: item.deviceModelName || "-",
+        createTime: item.createTime || "-",
+        creator: item.bindBy || item.createBy || "-",  // bindBy 是绑定人，createBy 是创建人
+      }));
+      
+      console.log(`成功加载 ${deviceList.value.length} 个已关联设备`);
+    } else {
+      ElMessage.error(res.msg || "获取关联设备列表失败");
+      deviceList.value = [];
+    }
+  } catch (error) {
+    console.error("获取关联设备列表失败:", error);
+    ElMessage.error("获取关联设备列表失败");
+    deviceList.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 返回
 const handleBack = () => {
-  router.back();
+  // 使用 router.push 返回文件列表页，避免 history 栈问题
+  router.push({ name: "FileManager" });
 };
 
 // 关联更多设备
@@ -166,15 +203,26 @@ const handleLinkMore = () => {
   });
 };
 
-
 // 初始化
 onMounted(() => {
   // 从路由参数获取文件ID
   const fileId = route.params.id || route.query.id;
+  
   if (fileId) {
-    // 这里可以根据ID加载文件详情
+    fileInfo.value.id = fileId;
     console.log("加载文件详情:", fileId);
+    
+    // 加载已关联的设备列表
+    loadBindDeviceList(fileId);
+  } else {
+    ElMessage.warning("缺少文件ID参数");
   }
+});
+
+// 组件卸载前清理
+onBeforeUnmount(() => {
+  // 清理数据
+  deviceList.value = [];
 });
 </script>
 
