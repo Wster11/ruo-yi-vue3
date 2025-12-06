@@ -141,6 +141,45 @@ export const constantRoutes = [
     ],
   },
   {
+    path: "",
+    component: Layout,
+    redirect: "/languageManage",
+    children: [
+      {
+        path: "/languageManage",
+        component: () => import("@/views/languageManage/index"),
+        name: "LanguageManage",
+        meta: { title: "语言管理", icon: "language" },
+      },
+    ],
+  },
+  {
+    path: "",
+    component: Layout,
+    redirect: "/languageDictManage",
+    children: [
+      {
+        path: "/languageDictManage",
+        component: () => import("@/views/languageDictManage/index"),
+        name: "LanguageDictManage",
+        meta: { title: "语言字典管理", icon: "dict" },
+      },
+    ],
+  },
+  {
+    path: "",
+    component: Layout,
+    redirect: "/deviceModelManage",
+    children: [
+      {
+        path: "/deviceModelManage",
+        component: () => import("@/views/deviceModelManage/index"),
+        name: "DeviceModelManage",
+        meta: { title: "设备型号管理", icon: "component" },
+      },
+    ],
+  },
+  {
     path: "/user",
     component: Layout,
     hidden: true,

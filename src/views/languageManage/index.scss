@@ -1,0 +1,121 @@
+// 语言管理页面样式
+
+.app-container {
+    padding: 20px;
+    background-color: #f5f7fa;
+    min-height: calc(100vh - 84px);
+}
+
+// 标题和操作栏
+.title-action-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .page-title {
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #303133;
+            margin: 0 0 8px 0;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #909399;
+            margin: 0;
+        }
+    }
+
+    .action-bar {
+        display: flex;
+        gap: 10px;
+    }
+}
+
+// 搜索表单区域
+.search-form {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e4e7ed;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+
+    :deep(.el-form-item) {
+        margin-bottom: 0;
+    }
+
+    :deep(.el-form-item__label) {
+        font-weight: 500;
+        color: #606266;
+    }
+}
+
+// 表格容器
+.language-table {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e4e7ed;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+
+    :deep(.el-table) {
+        border-radius: 4px;
+        overflow: hidden;
+
+        th {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: 600;
+        }
+
+        .el-table__body tr:hover>td {
+            background-color: #f5f7fa;
+        }
+    }
+}
+
+// 操作按钮
+.operation-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+// 分页容器
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+// 弹窗底部
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+// 响应式设计
+@media screen and (max-width: 768px) {
+    .title-action-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .search-form {
+        :deep(.el-form-item) {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+    }
+}
